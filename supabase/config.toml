@@ -1,0 +1,21 @@
+project_id = "shared-daily-checkin"
+
+[api]
+enabled = true
+
+[db]
+port = 54322
+major_version = 15
+
+[studio]
+enabled = true
+port = 54323
+
+[inbucket]
+enabled = false
+
+[realtime]
+enabled = true
+
+[auth]
+enabled = true

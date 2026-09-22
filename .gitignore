@@ -10,3 +10,9 @@ out/
 coverage/
 .DS_Store
 Thumbs.db
+.data/
+*.tsbuildinfo
+test-results/
+playwright-report/
+.env.*
+!.env.example
