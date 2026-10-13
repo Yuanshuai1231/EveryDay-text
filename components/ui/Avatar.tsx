@@ -1,6 +1,11 @@
 import type { Member } from "@/components/space/SpaceProvider";
-const colors = ["#FFE2AC", "#DCD6F1", "#CDE4D5", "#FFD1C7", "#CDDEEF"];
-export function Avatar({ member, size = "md" }: { member: Pick<Member, "id" | "nickname" | "avatar_color">; size?: "sm" | "md" | "lg" }) {
-  const index = Array.from(member.id).reduce((sum, char) => sum + char.charCodeAt(0), 0) % colors.length;
-  return <span className={`avatar avatar-${size}`} style={{ background: member.avatar_color || colors[index] }} title={member.nickname}>{member.nickname.slice(0, 1)}</span>;
+import { resolveAvatar } from "@/lib/avatars/catalog";
+import { AnimalPortrait } from "@/components/ui/AnimalPortrait";
+
+export type AvatarMember = Pick<Member, "id" | "nickname" | "avatar_color"> & { avatar_id?: string | null };
+export type AvatarSize = "sm" | "md" | "lg";
+
+export function Avatar({ member, size = "md" }: { member: AvatarMember; size?: AvatarSize }) {
+  const avatar = resolveAvatar(member.avatar_id, member.id);
+  return <span className={`avatar avatar-${size}`} data-avatar-id={avatar.id} role="img" aria-label={`${member.nickname}的${avatar.label}头像`} title={member.nickname} style={{ background: avatar.background, overflow: "hidden", display: "inline-grid", flex: "none" }}><AnimalPortrait animal={avatar.id} /></span>;
 }

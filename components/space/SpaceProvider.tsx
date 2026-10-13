@@ -2,8 +2,9 @@
 
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { localDateInTimeZone } from "@/lib/data/checkins";
 
-export type Member = { id: string; nickname: string; role?: "creator" | "member"; avatar_color?: string; joined_at?: string; removed_at?: string | null };
+export type Member = { id: string; nickname: string; role?: "creator" | "member"; avatar_color?: string; avatar_id?: string | null; joined_at?: string; removed_at?: string | null };
 export type Task = { id: string; creator_id: string; title: string; notes: string; target_date: string | null; completed: boolean; updated_at: string; created_at: string };
 export type DailyLog = { id: string; member_id: string; slot: "morning" | "afternoon"; content: string; edited_at?: string; work_date?: string };
 export type Activity = { id: string; member_id?: string; memberId?: string; text?: string; time?: string; type?: string; kind?: string; title?: string; body?: string; created_at?: string; timestamp?: string; nickname?: string };
@@ -51,7 +52,8 @@ export function SpaceProvider({ spaceId, children }: { spaceId: string; children
     window.addEventListener("online", refresh);
     return () => { events.close(); clearInterval(interval); window.removeEventListener("focus", refresh); window.removeEventListener("online", refresh); requestCounter.current++; };
   }, [reload, spaceId, router]);
-  return <SpaceContext.Provider value={{ spaceId, data, date: date || data?.date || "", setDate, loading, error, connection, reload }}>{children}</SpaceContext.Provider>;
+  const selectedDate = date || (data ? localDateInTimeZone(new Date(), data.space.timezone) : "");
+  return <SpaceContext.Provider value={{ spaceId, data, date: selectedDate, setDate, loading, error, connection, reload }}>{children}</SpaceContext.Provider>;
 }
 
 export function useSpace() { const context = useContext(SpaceContext); if (!context) throw new Error("useSpace requires SpaceProvider"); return context; }

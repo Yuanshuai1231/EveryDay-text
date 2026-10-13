@@ -7,8 +7,9 @@ import { Avatar } from "@/components/ui/Avatar";
 import { Mascot } from "@/components/ui/Mascot";
 
 export default function SpaceOverview() {
-  const { data, spaceId, date, setDate } = useSpace();
+  const { data, spaceId, date, setDate, error, reload } = useSpace();
   if (!data) return null;
+  if (data.date !== date) return <section className="panel"><div className="panel-heading"><h2>空间概览</h2></div><p style={{ padding: "0 23px 23px" }} role="status">{error ? "暂时无法读取这一天的记录，请重试。" : "正在加载这一天的记录…"}</p>{error && <button className="button button-secondary" onClick={() => void reload()}>重新加载</button>}</section>;
   const myCheckin = data.checkins.find(checkin => checkin.member_id === data.member.id);
   const myLogs = data.logs.filter(log => log.member_id === data.member.id);
   const percent = data.stats.totalMembers ? Math.round(data.stats.checkedIn / data.stats.totalMembers * 100) : 0;

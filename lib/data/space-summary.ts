@@ -8,7 +8,7 @@ export async function spaceSummary(spaceId:string,memberId:string,date?:string){
  const space=spaceResult.data;
  const day=date??localDateInTimeZone(new Date(),space.timezone);
  const results=await Promise.all([
-  db.from("members").select("id,nickname,role,avatar_color,joined_at,removed_at").eq("space_id",spaceId).order("joined_at"),
+  db.from("members").select("id,nickname,role,avatar_color,avatar_id,joined_at,removed_at").eq("space_id",spaceId).order("joined_at"),
   db.from("tasks").select("*").eq("space_id",spaceId).eq("target_date",day).order("created_at"),
   db.from("daily_logs").select("*").eq("space_id",spaceId).eq("work_date",day),
   db.from("daily_checkins").select("*").eq("space_id",spaceId).eq("work_date",day),

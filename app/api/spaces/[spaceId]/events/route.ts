@@ -25,7 +25,7 @@ export async function GET(request:NextRequest,context:{params:Promise<{spaceId:s
      const c=await db.from("conversation_members").select("conversation_id").eq("member_id",session.member_id);
      const ids=(c.data??[]).map(row=>row.conversation_id);
      const result=await Promise.all([
-      db.from("members").select("id,removed_at,role").eq("space_id",spaceId).order("id"),
+      db.from("members").select("id,removed_at,role,avatar_id").eq("space_id",spaceId).order("id"),
       db.from("tasks").select("id,updated_at").eq("space_id",spaceId).order("id"),
       db.from("daily_logs").select("id,edited_at").eq("space_id",spaceId).order("id"),
       db.from("daily_checkins").select("id,checked_in_at").eq("space_id",spaceId).order("id"),

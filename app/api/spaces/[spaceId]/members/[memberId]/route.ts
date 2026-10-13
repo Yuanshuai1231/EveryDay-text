@@ -2,6 +2,10 @@ import { hasSameOrigin } from "@/lib/auth/origin";
 import { NextRequest } from "next/server";
 import { clearSessionCookie,getCurrentSession } from "@/lib/auth/session";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
+import { z } from "zod";
+import { isAvatarId, type AvatarId } from "@/lib/avatars/catalog";
+import { assertSameOrigin, DataApiError, dataErrorResponse, parseRequestBody, parseUuid, requireActiveSpaceMember } from "@/lib/data/api";
+import { ERROR_CODES } from "@/lib/auth/validation";
 export async function DELETE(request:NextRequest,context:{params:Promise<{spaceId:string;memberId:string}>}){
 
  if(!hasSameOrigin(request))return Response.json({error:{message:"请求来源无效"}},{status:403});
@@ -15,6 +19,28 @@ export async function DELETE(request:NextRequest,context:{params:Promise<{spaceI
  }
  if(memberId===session.member_id)await clearSessionCookie();
  return Response.json({ok:true});
+}
+
+const avatarSchema = z.object({ avatarId: z.custom<AvatarId>(isAvatarId) });
+
+export async function PATCH(request: NextRequest, context: { params: Promise<{ spaceId: string; memberId: string }> }) {
+  try {
+    assertSameOrigin(request);
+    const params = await context.params;
+    const spaceId = parseUuid(params.spaceId), memberId = parseUuid(params.memberId);
+    const db = createSupabaseAdminClient();
+    const { session } = await requireActiveSpaceMember(db, spaceId);
+    if (memberId !== session.member_id) throw new DataApiError(ERROR_CODES.FORBIDDEN, "只能修改自己的头像", 403);
+    const { avatarId } = await parseRequestBody(request, avatarSchema);
+    const { data: member, error } = await db.from("members")
+      .update({ avatar_id: avatarId }).eq("space_id", spaceId).eq("id", memberId).is("removed_at", null)
+      .select("id,nickname,role,avatar_color,avatar_id").maybeSingle();
+    if (error) throw error;
+    if (!member) throw new DataApiError(ERROR_CODES.FORBIDDEN, "你已不在这个空间中", 403);
+    return Response.json({ member });
+  } catch (error) {
+    return dataErrorResponse(error);
+  }
 }
 
 

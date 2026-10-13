@@ -7,11 +7,12 @@ import { Avatar } from "@/components/ui/Avatar";
 import { Mascot } from "@/components/ui/Mascot";
 
 export function TaskBoard() {
-  const { data, date, setDate, spaceId, reload } = useSpace();
+  const { data, date, setDate, spaceId, reload, error: loadError } = useSpace();
   const [filter, setFilter] = useState("all"); const [editing, setEditing] = useState<Task | "new" | null>(null);
   const [title, setTitle] = useState(""); const [notes, setNotes] = useState(""); const [targetDate, setTargetDate] = useState("");
   const [busy, setBusy] = useState(""); const [error, setError] = useState(""); const [deleting, setDeleting] = useState<Task | null>(null);
   if (!data) return null;
+  if (data.date !== date) return <section className="panel"><div className="panel-heading"><h2>小组任务</h2></div><p style={{ padding: "0 23px 23px" }} role="status">{loadError ? "暂时无法读取这一天的任务，请重试。" : "正在加载这一天的任务…"}</p>{loadError && <button className="button button-secondary" onClick={() => void reload()}>重新加载</button>}</section>;
   const tasks = data.tasks.filter(task => filter === "all" || (filter === "done" ? task.completed : !task.completed));
   function open(task: Task | "new") { setEditing(task); setTitle(task === "new" ? "" : task.title); setNotes(task === "new" ? "" : task.notes); setTargetDate(task === "new" ? date : task.target_date || ""); setError(""); }
   async function save(event: FormEvent) {

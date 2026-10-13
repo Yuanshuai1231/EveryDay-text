@@ -2,9 +2,15 @@
 
 import { useEffect, useRef, useState } from "react";
 import { CloudSun, Sun } from "lucide-react";
-import { clearDraft, loadDraft, saveDraft, type DraftSlot } from "@/lib/offline/drafts";
+import {
+  clearDraft,
+  loadDraft,
+  saveDraft,
+  type DraftSlot,
+} from "@/lib/offline/drafts";
 import { CheckinStatus, type SaveState } from "./CheckinStatus";
 import { LogSaveQueue, type RemoteLog } from "./log-save-queue";
+import styles from "./checkin.module.css";
 
 type Props = {
   spaceId: string;
@@ -13,15 +19,28 @@ type Props = {
   slot: DraftSlot;
   initialContent?: string;
   editedAt?: string;
+  onSaved?: () => void | Promise<void>;
 };
 
-export function LogEditor({ spaceId, memberId, date, slot, initialContent = "", editedAt }: Props) {
+export function LogEditor({
+  spaceId,
+  memberId,
+  date,
+  slot,
+  initialContent = "",
+  editedAt,
+  onSaved,
+}: Props) {
   const [content, setContent] = useState(initialContent);
   const [state, setState] = useState<SaveState>("idle");
   const [remote, setRemote] = useState<RemoteLog | null>(null);
   const [conflicted, setConflicted] = useState(false);
   const userEdited = useRef(false);
   const queue = useRef<LogSaveQueue | null>(null);
+  const onSavedRef = useRef(onSaved);
+  useEffect(() => {
+    onSavedRef.current = onSaved;
+  }, [onSaved]);
 
   useEffect(() => {
     let active = true;
@@ -37,22 +56,47 @@ export function LogEditor({ spaceId, memberId, date, slot, initialContent = "", 
         });
         if (response.status === 409) {
           const payload = await response.json();
-          return { kind: "conflict" as const, remote: payload.remote as RemoteLog | null };
+          return {
+            kind: "conflict" as const,
+            remote: payload.remote as RemoteLog | null,
+          };
         }
         if (!response.ok) throw new Error("Save failed");
         const payload = await response.json();
-        return { kind: "saved" as const, editedAt: payload.log.edited_at as string };
+        // A refresh failure must not retry a PUT which has already succeeded.
+        void Promise.resolve()
+          .then(() => {
+            if (active) return onSavedRef.current?.();
+          })
+          .catch(() => {});
+        return {
+          kind: "saved" as const,
+          editedAt: payload.log.edited_at as string,
+        };
       },
-      onState: (next) => { if (active) { setState(next); setConflicted(next === "conflict"); } },
-      onConflict: (value) => { if (active) setRemote(value); },
-      onRemoteSelected: (value) => { if (active) setContent(value); },
+      onState: (next) => {
+        if (active) {
+          setState(next);
+          setConflicted(next === "conflict");
+        }
+      },
+      onConflict: (value) => {
+        if (active) setRemote(value);
+      },
+      onRemoteSelected: (value) => {
+        if (active) setContent(value);
+      },
     });
     queue.current = current;
-    loadDraft(spaceId, memberId, date, slot).then((draft) => {
-      if (!active || !draft || userEdited.current) return;
-      setContent(draft.content);
-      void current.restore(draft);
-    }).catch(() => { if (active) setState("failed"); });
+    loadDraft(spaceId, memberId, date, slot)
+      .then((draft) => {
+        if (!active || !draft || userEdited.current) return;
+        setContent(draft.content);
+        void current.restore(draft);
+      })
+      .catch(() => {
+        if (active) setState("failed");
+      });
     const reconnect = () => current.retry();
     window.addEventListener("online", reconnect);
     return () => {
@@ -70,17 +114,53 @@ export function LogEditor({ spaceId, memberId, date, slot, initialContent = "", 
   }
 
   return (
-    <div className="log-editor panel flex min-w-0 flex-col gap-3 border border-[#e4dbec] bg-white p-5">
-      <label className="flex items-center gap-2 font-semibold" htmlFor={`${date}-${slot}`}>{slot === "morning" ? <Sun aria-hidden="true" className="text-[#e9a92f]" size={20} /> : <CloudSun aria-hidden="true" className="text-[#e78a69]" size={20} />}{slot === "morning" ? "上午记录" : "下午记录"}</label>
-      <textarea id={`${date}-${slot}`} className="field min-h-40 w-full resize-y p-3" value={content} onChange={(event) => edit(event.target.value)} placeholder="写下今天做了什么…" rows={5} />
+    <div className={`log-editor ${styles.editor}`}>
+      <label className={styles.editorLabel} htmlFor={`${date}-${slot}`}>
+        {slot === "morning" ? (
+          <Sun aria-hidden="true" className="text-[#e9a92f]" size={20} />
+        ) : (
+          <CloudSun aria-hidden="true" className="text-[#e78a69]" size={20} />
+        )}
+        {slot === "morning" ? "上午记录" : "下午记录"}
+      </label>
+      <textarea
+        id={`${date}-${slot}`}
+        className={styles.editorInput}
+        value={content}
+        onChange={(event) => edit(event.target.value)}
+        placeholder="写下今天做了什么…"
+        rows={6}
+      />
       <CheckinStatus state={state} />
-      {state === "failed" && <button type="button" className="button" onClick={() => queue.current?.retry()}>重试保存</button>}
-      {conflicted && <div className="conflict-actions" role="group" aria-label="版本冲突">
-        <p>本地版本：{content}</p>
-        <p>远端版本：{remote?.content ?? "（空）"}</p>
-        <button type="button" className="button" onClick={() => void queue.current?.keepRemote()}>保留远端</button>
-        <button type="button" className="button" onClick={() => queue.current?.keepLocal()}>保留本地</button>
-      </div>}
+      {state === "failed" && (
+        <button
+          type="button"
+          className="button"
+          onClick={() => queue.current?.retry()}
+        >
+          重试保存
+        </button>
+      )}
+      {conflicted && (
+        <div className="conflict-actions" role="group" aria-label="版本冲突">
+          <p>本地版本：{content}</p>
+          <p>远端版本：{remote?.content ?? "（空）"}</p>
+          <button
+            type="button"
+            className="button"
+            onClick={() => void queue.current?.keepRemote()}
+          >
+            保留远端
+          </button>
+          <button
+            type="button"
+            className="button"
+            onClick={() => queue.current?.keepLocal()}
+          >
+            保留本地
+          </button>
+        </div>
+      )}
     </div>
   );
 }

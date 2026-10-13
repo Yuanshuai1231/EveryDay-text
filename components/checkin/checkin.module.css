@@ -1,0 +1,349 @@
+.page {
+  width: 100%;
+  max-width: 1080px;
+  margin: 0 auto;
+  padding-block: 8px;
+}
+.pageHeader {
+  margin-bottom: 30px;
+}
+.dateForm {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+.dateForm label {
+  color: var(--ink-soft);
+  font-size: 12px;
+}
+.dateInput {
+  min-width: 0;
+  min-height: 42px;
+  border: 1px solid #ded5df;
+  border-radius: 11px;
+  padding: 9px 12px;
+  color: var(--plum);
+  background: #fff;
+  font-size: 12px;
+}
+.dateInput:focus {
+  border-color: var(--lavender);
+}
+.workspace {
+  display: grid;
+  gap: 38px;
+}
+.ownSection,
+.groupSection {
+  min-width: 0;
+}
+.sectionHeading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+.sectionHeading h2 {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: 0;
+  color: var(--plum-dark);
+  font-size: 21px;
+  letter-spacing: -0.02em;
+}
+.sectionHeading h2 svg {
+  color: var(--lavender);
+}
+.sectionHeading p {
+  margin: 8px 0 0;
+  color: var(--ink-soft);
+  font-size: 12px;
+  line-height: 1.7;
+}
+.autosaveNote,
+.dayChip {
+  flex: none;
+  border-radius: 999px;
+  padding: 7px 11px;
+  color: var(--plum);
+  background: var(--lavender-soft);
+  font-size: 11px;
+}
+.autosaveNote {
+  color: #688772;
+  background: var(--green-soft);
+}
+.editorGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+.editor {
+  display: flex;
+  min-width: 0;
+  min-height: 310px;
+  flex-direction: column;
+  gap: 14px;
+  border: 1px solid #e6ddec;
+  border-radius: 18px;
+  padding: 22px;
+  background: #fff;
+  box-shadow: var(--shadow-soft);
+}
+.editorLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--plum-dark);
+  font-size: 15px;
+  font-weight: 750;
+}
+.editorInput {
+  width: 100%;
+  min-height: 195px;
+  flex: 1;
+  resize: vertical;
+  border: 1px solid #e8e0eb;
+  border-radius: 12px;
+  padding: 14px;
+  color: var(--ink);
+  background: #fdfbff;
+  font-size: 13px;
+  line-height: 1.9;
+  outline: none;
+}
+.editorInput:focus {
+  border-color: var(--lavender);
+  box-shadow: 0 0 0 3px rgba(154, 140, 196, 0.12);
+}
+.editorInput::placeholder {
+  color: #ada2b5;
+}
+.completionForm {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-top: 20px;
+}
+.completionForm p {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 12px;
+  line-height: 1.6;
+}
+.memberGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  gap: 18px;
+}
+.memberCard {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid #e9e1eb;
+  border-radius: 18px;
+  padding: 21px;
+  background: #fff;
+  box-shadow: var(--shadow-soft);
+}
+.memberHeading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+.memberName {
+  min-width: 0;
+  flex: 1;
+}
+.memberName h3 {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  overflow-wrap: anywhere;
+  color: var(--plum-dark);
+  font-size: 15px;
+  line-height: 1.5;
+}
+.memberName p {
+  margin: 3px 0 0;
+  color: var(--ink-faint);
+  font-size: 10px;
+}
+.selfTag {
+  border-radius: 999px;
+  padding: 1px 6px;
+  color: #bb7060;
+  background: var(--coral-soft);
+  font-size: 10px;
+  font-weight: 500;
+}
+.checkinBadge {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 3px;
+  border-radius: 999px;
+  padding: 5px 8px;
+  color: #948a9d;
+  background: #f5f2f7;
+  font-size: 10px;
+}
+.checked {
+  color: #588366;
+  background: var(--green-soft);
+}
+.recordSlots {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+.recordSlot {
+  min-width: 0;
+  border-radius: 12px;
+  padding: 14px 16px;
+}
+.morning {
+  background: #fff9e9;
+}
+.afternoon {
+  background: #f5f2fc;
+}
+.recordSlot h4 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 10px;
+  color: var(--plum);
+  font-size: 11px;
+  font-weight: 750;
+}
+.morning h4 svg {
+  color: #d7a43e;
+}
+.afternoon h4 svg {
+  color: var(--lavender);
+}
+.recordContent,
+.placeholder {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  color: var(--ink);
+  font-size: 13px;
+  line-height: 1.85;
+}
+.placeholder {
+  color: #a69bad;
+  font-size: 12px;
+}
+.memberFooter {
+  margin-top: 15px;
+  color: var(--ink-faint);
+  font-size: 10px;
+  line-height: 1.6;
+}
+.memberFooter time {
+  margin-left: 4px;
+}
+.emptyNotice {
+  margin: 0 0 16px;
+  border: 1px dashed #e3d9e9;
+  border-radius: 12px;
+  padding: 14px 18px;
+  color: var(--ink-soft);
+  background: #faf7fd;
+  font-size: 12px;
+  line-height: 1.7;
+}
+.loading {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 38px 20px;
+  color: var(--lavender);
+  background: #fff;
+}
+.loading p {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 12px;
+}
+.error {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  border-radius: 12px;
+  padding: 14px 16px;
+  color: #a45954;
+  background: var(--coral-soft);
+  font-size: 12px;
+  line-height: 1.6;
+}
+.error button {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 5px;
+  border: 0;
+  border-radius: 8px;
+  padding: 6px 8px;
+  color: var(--plum);
+  background: #fff;
+  font-size: 11px;
+  font-weight: 700;
+}
+@media (max-width: 767px) {
+  .page {
+    padding: 0;
+  }
+  .pageHeader {
+    margin-bottom: 26px;
+  }
+  .dateForm {
+    width: 100%;
+  }
+  .dateInput {
+    flex: 1;
+  }
+  .workspace {
+    gap: 32px;
+  }
+  .editorGrid,
+  .memberGrid {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+  .sectionHeading {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .sectionHeading h2 {
+    font-size: 19px;
+  }
+  .editor {
+    min-height: 300px;
+    padding: 19px;
+  }
+  .memberCard {
+    padding: 18px;
+  }
+  .checkinBadge {
+    padding-inline: 6px;
+    font-size: 9px;
+  }
+  .completionForm {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

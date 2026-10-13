@@ -17,7 +17,7 @@ export async function GET(request: NextRequest, context: { params: Promise<{ spa
   const result = await auth(spaceId); if (result.error) return result.error;
   const date = request.nextUrl.searchParams.get("date") ?? "";
   if (!isValidWorkDate(date)) return errorResponse(ERROR_CODES.INVALID_INPUT, "日期无效", 400);
-  const { data: members, error: membersError } = await result.db.from("members").select("id,nickname,avatar_color,role").eq("space_id", spaceId).is("removed_at", null).order("joined_at");
+  const { data: members, error: membersError } = await result.db.from("members").select("id,nickname,avatar_color,avatar_id,role").eq("space_id", spaceId).is("removed_at", null).order("joined_at");
   const { data: logs, error: logsError } = await result.db.from("daily_logs").select("*").eq("space_id", spaceId).eq("work_date", date);
   if (membersError || logsError) return errorResponse(ERROR_CODES.INTERNAL, "无法读取打卡记录", 500);
   return NextResponse.json({ date, members: members ?? [], logs: logs ?? [] });

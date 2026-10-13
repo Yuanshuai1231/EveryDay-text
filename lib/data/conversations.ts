@@ -5,15 +5,16 @@ import type { Database } from "@/lib/supabase/types";
 import { DataApiError, type DataClient, uuidSchema } from "./api";
 
 export type ConversationRecord = Database["public"]["Tables"]["conversations"]["Row"];
-export type ConversationWithPeer = ConversationRecord & { otherMember: { id: string; nickname: string; removed_at: string | null } | null };
+type ConversationPeer = Pick<Database["public"]["Tables"]["members"]["Row"], "id" | "nickname" | "avatar_id" | "removed_at">;
+export type ConversationWithPeer = ConversationRecord & { otherMember: ConversationPeer | null };
 export const openConversationSchema = z.object({ memberId: uuidSchema }).strict();
 type ChatDatabase = { public: Omit<Database["public"], "Functions"> & { Functions: Database["public"]["Functions"] & { open_direct_conversation: { Args: { p_space_id: string; p_member_id: string; p_other_member_id: string }; Returns: ConversationRecord[] } } } };
 
 async function attachPeers(db: DataClient, conversations: ConversationRecord[], memberId: string): Promise<ConversationWithPeer[]> {
   const peerIds = [...new Set(conversations.filter((item) => item.kind === "direct").map((item) => item.direct_member_low === memberId ? item.direct_member_high! : item.direct_member_low!))];
-  let peers: Array<{ id: string; nickname: string; removed_at: string | null }> = [];
+  let peers: ConversationPeer[] = [];
   if (peerIds.length) {
-    const { data, error } = await db.from("members").select("id,nickname,removed_at").in("id", peerIds);
+    const { data, error } = await db.from("members").select("id,nickname,avatar_id,removed_at").in("id", peerIds);
     if (error) throw error;
     peers = data ?? [];
   }
@@ -32,7 +33,7 @@ export async function listConversations(db: DataClient, spaceId: string, memberI
 
 export async function openDirectConversation(db: DataClient, spaceId: string, memberId: string, otherMemberId: string): Promise<ConversationWithPeer> {
   if (memberId === otherMemberId) throw new DataApiError(ERROR_CODES.INVALID_INPUT, "请选择另一位成员", 400);
-  const { data: peer, error: peerError } = await db.from("members").select("id,nickname,removed_at").eq("space_id", spaceId).eq("id", otherMemberId).is("removed_at", null).maybeSingle();
+  const { data: peer, error: peerError } = await db.from("members").select("id,nickname,avatar_id,removed_at").eq("space_id", spaceId).eq("id", otherMemberId).is("removed_at", null).maybeSingle();
   if (peerError) throw peerError;
   if (!peer) throw new DataApiError(ERROR_CODES.FORBIDDEN, "对方已不在这个空间中", 403);
   const client = db as unknown as SupabaseClient<ChatDatabase>;
