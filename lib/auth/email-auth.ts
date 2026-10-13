@@ -18,6 +18,7 @@ import {
   validMailAddress,
 } from "./mail-delivery";
 import { digestToken } from "./token";
+import { getSiteUrl } from "./site-url";
 import {
   AccountExistsError,
   CODE_VERIFICATION_INFO,
@@ -190,7 +191,7 @@ export async function registerCloud(body: Record<string, unknown>) {
     password,
     options: {
       data: { nickname },
-      emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"}/auth/confirm?type=email`,
+      emailRedirectTo: `${getSiteUrl()}/auth/confirm?type=email`,
     },
   });
   if (error) cloudMailError(error);
@@ -269,7 +270,7 @@ export async function resendCloud(emailInput: unknown) {
     type: "signup",
     email,
     options: {
-      emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"}/auth/confirm?type=email`,
+      emailRedirectTo: `${getSiteUrl()}/auth/confirm?type=email`,
     },
   });
   if (error) cloudMailError(error);
@@ -317,7 +318,7 @@ export async function requestResetCloud(emailInput: unknown) {
   if (!validEmail(email)) return;
   const { error } =
     await createSupabaseAdminClient().auth.resetPasswordForEmail(email, {
-      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"}/auth/confirm?type=recovery`,
+      redirectTo: `${getSiteUrl()}/auth/confirm?type=recovery`,
     });
   if (error) throw new MailDeliveryError();
   return { message: GENERIC_MESSAGE, ...mailResponseInfo("supabase") };

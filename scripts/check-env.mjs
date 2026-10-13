@@ -10,18 +10,29 @@ const cloud =
   vercel ||
   process.env.CHECKIN_STORAGE === "supabase" ||
   Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL);
+const siteUrl =
+  process.env.NEXT_PUBLIC_SITE_URL?.trim() ||
+  (vercel && process.env.VERCEL_PROJECT_PRODUCTION_URL?.trim()
+    ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL.trim()}`
+    : vercel && process.env.VERCEL_URL?.trim()
+      ? `https://${process.env.VERCEL_URL.trim()}`
+      : "");
 console.log(cloud ? "存储模式：Supabase" : "存储模式：本地 PostgreSQL");
 let invalid = false;
-for (const name of cloud
-  ? [
-      "NEXT_PUBLIC_SUPABASE_URL",
-      "SUPABASE_SERVICE_ROLE_KEY",
-      "NEXT_PUBLIC_SITE_URL",
-    ]
-  : []) {
+for (const name of cloud ? ["NEXT_PUBLIC_SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"] : []) {
   const present = Boolean(process.env[name]?.trim());
   console.log(name + ": " + (present ? "已配置" : "缺失"));
   invalid ||= !present;
+}
+if (cloud) {
+  console.log(
+    process.env.NEXT_PUBLIC_SITE_URL?.trim()
+      ? "NEXT_PUBLIC_SITE_URL: 已配置"
+      : siteUrl
+        ? "NEXT_PUBLIC_SITE_URL: 未配置（使用 Vercel 系统域名）"
+        : "NEXT_PUBLIC_SITE_URL: 缺失",
+  );
+  invalid ||= !siteUrl;
 }
 if (vercel && invalid)
   console.error(
@@ -47,9 +58,9 @@ if (cloud && process.env.NEXT_PUBLIC_SUPABASE_URL) {
   }
 }
 const key = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
-if (cloud && process.env.NEXT_PUBLIC_SITE_URL) {
+if (cloud && siteUrl) {
   try {
-    const site = new URL(process.env.NEXT_PUBLIC_SITE_URL);
+    const site = new URL(siteUrl);
     const local =
       site.hostname === "localhost" ||
       site.hostname === "[::1]" ||
@@ -66,7 +77,7 @@ if (cloud && process.env.NEXT_PUBLIC_SITE_URL) {
       throw new Error("invalid site origin");
   } catch {
     console.error(
-      "NEXT_PUBLIC_SITE_URL 必须是网站地址；Vercel 生产邮件链接需要公开 HTTPS 地址，不能填写 localhost。",
+      "NEXT_PUBLIC_SITE_URL 或 Vercel 系统域名必须是公开 HTTPS 网站地址，不能填写 localhost。",
     );
     invalid = true;
   }

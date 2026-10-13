@@ -117,6 +117,18 @@ describe("deployment database configuration", () => {
     expect(result.status).toBe(1);
     expect(result.stdout + result.stderr).toContain("NEXT_PUBLIC_SITE_URL");
   });
+  it("uses Vercel's production URL when the explicit site URL is omitted", () => {
+    const result = check({
+      VERCEL: "1",
+      VERCEL_PROJECT_PRODUCTION_URL: "every-day-text.vercel.app",
+      NEXT_PUBLIC_SUPABASE_URL: "https://example.supabase.co",
+      SUPABASE_SERVICE_ROLE_KEY: "sb_secret_test",
+    });
+    expect(result.status).toBe(0);
+    expect(result.stdout + result.stderr).toContain(
+      "使用 Vercel 系统域名",
+    );
+  });
   it("rejects localhost email redirects on Vercel", () => {
     expect(
       check({

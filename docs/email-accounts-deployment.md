@@ -48,7 +48,7 @@
    ```
 
 5. Authentication → SMTP Settings：为真实用户配置发信服务与发件邮箱。Supabase 默认邮件服务仅用于试用，并限制收件地址与频率；正式网站需要自定义 SMTP。不要在聊天或仓库中公开 SMTP 密码。
-6. Vercel Production 设置 `NEXT_PUBLIC_SITE_URL=https://every-day-text.vercel.app`，保留 `CHECKIN_STORAGE=supabase`、`NEXT_PUBLIC_SUPABASE_URL` 和服务端 `SUPABASE_SERVICE_ROLE_KEY`。
+6. Vercel Production 推荐设置 `NEXT_PUBLIC_SITE_URL=https://every-day-text.vercel.app`，保留 `CHECKIN_STORAGE=supabase`、`NEXT_PUBLIC_SUPABASE_URL` 和服务端 `SUPABASE_SERVICE_ROLE_KEY`。如果暂时不设置，构建和回调会使用 Vercel 的 `VERCEL_PROJECT_PRODUCTION_URL` 或 `VERCEL_URL` 系统变量。
 
 参考：[邮箱密码认证](https://supabase.com/docs/guides/auth/passwords)、[SMTP 设置](https://supabase.com/docs/guides/auth/auth-smtp)、[邮件模板](https://supabase.com/docs/guides/auth/auth-email-templates)。
 

@@ -1,6 +1,7 @@
 import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
+import { getSiteUrl } from "./site-url";
 
 export type LocalMail = {
   id: string;
@@ -55,7 +56,7 @@ export async function listLocalMail(): Promise<LocalMail[]> {
   }
 }
 export function localMailUrl(token: string, type: "signup" | "reset") {
-  const origin = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+  const origin = getSiteUrl();
   return type === "reset"
     ? `${origin}/reset-password?token=${encodeURIComponent(token)}`
     : `${origin}/auth/confirm?token=${encodeURIComponent(token)}&type=signup`;
