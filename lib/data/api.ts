@@ -43,7 +43,7 @@ export function parseUuid(value: string) {
 }
 
 export async function requireActiveSpaceMember(db: DataClient, spaceId?: string) {
-  const session = await getCurrentSession(db);
+  const session = await getCurrentSession(db, spaceId);
   if (!session || session.revoked_at || session.member_removed_at || Date.parse(session.expires_at) <= Date.now()) {
     throw new DataApiError(ERROR_CODES.UNAUTHORIZED, "会话已失效，请重新加入空间", 401);
   }

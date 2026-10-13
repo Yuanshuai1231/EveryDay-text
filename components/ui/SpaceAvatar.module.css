@@ -1,0 +1,5 @@
+.avatar { display: inline-grid; place-items: center; flex: none; overflow: hidden; border: 1px solid rgba(98, 73, 121, .07); border-radius: 14px; vertical-align: middle; }
+.sm { width: 37px; height: 37px; border-radius: 11px; }
+.md { width: 48px; height: 48px; }
+.lg { width: 62px; height: 62px; border-radius: 19px; }
+.portrait { display: block; }

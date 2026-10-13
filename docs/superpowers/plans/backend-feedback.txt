@@ -1,0 +1,5 @@
+最终反馈：范围沿用 reminder checklist spec（lib/data/tasks.ts、task API、00500 migration、summary/events、local fetch/supabase types、integration tests）。
+请保留完整旧logs文本：source_log_id非空的迁移历史notes可>5000，新的公共API仍5000。
+旧tasks.target_date为空时，请迁为对应space timezone的created_at日期，确保保留可见性，移除成员历史迁移时临时停trigger且恢复。
+历史保护：once completed_on不等于当前date且已有真实completion，PATCH completed操作拒400 TASK_COMPLETION_ON_OTHER_DATE；原完成日取消仍允许。先写有效回归。
+修完针对性测试/类型/lint后freeze并final汇报，不再send重复消息。根处理fulltests/构建/本地接口验收。不要改UI/docs/env/浏览器/邮件/云/提交。

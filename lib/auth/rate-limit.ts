@@ -23,3 +23,4 @@ export class FixedWindowRateLimiter {
 }
 
 export const joinRateLimiter = new FixedWindowRateLimiter();
+export const spaceCreateRateLimiter = new FixedWindowRateLimiter(10, 300_000);

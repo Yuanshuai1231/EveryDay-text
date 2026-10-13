@@ -14,10 +14,18 @@ describe("PostgreSQL access boundaries",()=>{
   it(role+" cannot read business tables or sessions even with table grants",async()=>{
    await db.transaction(async tx=>{
     await tx.exec("GRANT SELECT ON ALL TABLES IN SCHEMA public TO "+role+"; SET LOCAL ROLE "+role);
-    for(const table of ["spaces","members","member_sessions","tasks","daily_logs","daily_checkins","conversations","conversation_members","messages"]){
+    for(const table of ["spaces","members","member_sessions","tasks","task_completions","daily_logs","daily_checkins","conversations","conversation_members","messages"]){
      expect((await tx.query("SELECT * FROM "+table)).rows).toHaveLength(0);
     }
    });
+  });
+ }
+ for(const role of ["anon","authenticated"]){
+  it(role+" cannot invoke task mutation transactions",async()=>{
+   await expect(db.transaction(async tx=>{
+    await tx.exec("SET LOCAL ROLE "+role);
+    await tx.query("select create_owned_task($1,$2,'forbidden','','2026-10-13','once')",[a.space_id,a.member_id]);
+   })).rejects.toThrow("permission denied for function create_owned_task");
   });
  }
  it("rejects cross-space member attachment",async()=>{

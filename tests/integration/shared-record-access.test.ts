@@ -26,7 +26,7 @@ const auth = vi.hoisted(() => ({
   client: null as DataClient | null,
 }));
 vi.mock("next/headers", () => ({
-  cookies: async () => ({ get: () => ({ value: auth.token }) }),
+  cookies: async () => ({ get: (name: string) => name === "daily_member_session" ? ({ value: auth.token }) : undefined }),
 }));
 vi.mock("@/lib/supabase/server", () => ({
   createSupabaseAdminClient: () => auth.client,

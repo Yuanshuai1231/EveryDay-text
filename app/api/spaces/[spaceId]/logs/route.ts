@@ -6,7 +6,7 @@ import { hasSameOrigin, isObject, isValidSlot, isValidWorkDate, nextEditedAt } f
 
 async function auth(spaceId: string) {
   const db = createSupabaseAdminClient();
-  const session = await getCurrentSession(db);
+  const session = await getCurrentSession(db, spaceId);
   if (!session) return { db, error: errorResponse(ERROR_CODES.UNAUTHORIZED, "会话已失效", 401) };
   if (session.space_id !== spaceId) return { db, error: errorResponse(ERROR_CODES.FORBIDDEN, "无权访问该空间", 403) };
   return { db, session };

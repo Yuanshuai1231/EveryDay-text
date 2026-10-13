@@ -9,17 +9,23 @@ export function CheckinButton({
   initialCheckedAt,
   timeZone = "Asia/Shanghai",
   onSaved,
+  onBusyChange,
 }: {
   spaceId: string;
   date: string;
   initialCheckedAt?: string;
   timeZone?: string;
   onSaved?: () => void | Promise<void>;
+  onBusyChange?: (busy: boolean) => void;
 }) {
   const [checkedAt, setCheckedAt] = useState(initialCheckedAt);
   const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
   async function complete(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (busy) return;
+    setBusy(true);
+    onBusyChange?.(true);
     try {
       const response = await fetch(`/api/spaces/${spaceId}/checkins`, {
         method: "PUT",
@@ -35,6 +41,9 @@ export function CheckinButton({
         .catch(() => {});
     } catch {
       setError("打卡失败，请重试");
+    } finally {
+      setBusy(false);
+      onBusyChange?.(false);
     }
   }
   return (
@@ -44,8 +53,8 @@ export function CheckinButton({
       onSubmit={complete}
       className={styles.completionForm}
     >
-      <button type="submit" className="button button-primary">
-        {checkedAt ? "更新完成时间" : "完成今日打卡 ✓"}
+      <button type="submit" className="button button-primary" disabled={busy}>
+        {busy ? "正在打卡…" : checkedAt ? "更新完成时间" : "完成今日打卡 ✓"}
       </button>
       <p role="status">
         {error ||

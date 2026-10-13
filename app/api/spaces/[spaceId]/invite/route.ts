@@ -11,7 +11,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ sp
   if (!hasSameOrigin(request)) return errorResponse(ERROR_CODES.FORBIDDEN, "请求来源无效", 403);
   const { spaceId } = await context.params;
   const db = createSupabaseAdminClient();
-  const session = await getCurrentSession(db);
+  const session = await getCurrentSession(db, spaceId);
   if (!session) return errorResponse(ERROR_CODES.UNAUTHORIZED, "会话已失效", 401);
   if (session.space_id !== spaceId || session.member_role !== "creator") return errorResponse(ERROR_CODES.FORBIDDEN, "仅创建者可轮换邀请码", 403);
   for (let attempt = 0; attempt < 5; attempt += 1) {

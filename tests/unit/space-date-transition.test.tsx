@@ -35,6 +35,8 @@ function data(date: string, content: string) {
       {
         id: "task",
         creator_id: "me",
+        scope: "group",
+        assignee_id: "me",
         title: `任务：${content}`,
         notes: "",
         target_date: date,
@@ -74,7 +76,7 @@ describe("space date transitions", () => {
   it.each(["overview", "tasks"] as const)(
     "%s never labels a previous summary as the newly selected day",
     async (view) => {
-      const prefix = view === "tasks" ? "任务：" : "";
+      const prefix = "任务：";
       vi.useFakeTimers({ toFake: ["Date"] });
       vi.setSystemTime(new Date("2026-10-13T03:00:00Z"));
       vi.stubGlobal("EventSource", Events);
@@ -104,17 +106,17 @@ describe("space date transitions", () => {
           <Preview view={view} />
         </SpaceProvider>,
       );
-      await screen.findByText(`${prefix}今天的记录`);
+      await waitFor(() => expect(screen.queryAllByText(`${prefix}今天的记录`).length).toBeGreaterThan(0));
       fireEvent.click(screen.getByRole("button", { name: "历史日期" }));
       await waitFor(() => expect(resolveHistory).toBeTypeOf("function"));
-      expect(screen.queryByText(`${prefix}今天的记录`)).toBeNull();
+      expect(screen.queryAllByText(`${prefix}今天的记录`)).toHaveLength(0);
       resolveHistory(Response.json(data("2026-10-12", "昨天的记录")));
-      await screen.findByText(`${prefix}昨天的记录`);
+      await waitFor(() => expect(screen.queryAllByText(`${prefix}昨天的记录`).length).toBeGreaterThan(0));
       fireEvent.click(screen.getByRole("button", { name: "返回今天" }));
       await waitFor(() => expect(resolveToday).toBeTypeOf("function"));
-      expect(screen.queryByText(`${prefix}昨天的记录`)).toBeNull();
+      expect(screen.queryAllByText(`${prefix}昨天的记录`)).toHaveLength(0);
       resolveToday(Response.json(data("2026-10-13", "今天的记录")));
-      await screen.findByText(`${prefix}今天的记录`);
+      await waitFor(() => expect(screen.queryAllByText(`${prefix}今天的记录`).length).toBeGreaterThan(0));
     },
   );
 });

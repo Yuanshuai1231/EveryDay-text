@@ -6,7 +6,7 @@ import { z } from "zod";
 export async function POST(request:NextRequest,context:{params:Promise<{spaceId:string}>}){
 
  if(!hasSameOrigin(request))return Response.json({error:{message:"请求来源无效"}},{status:403});
- const {spaceId}=await context.params;const db=createSupabaseAdminClient();const session=await getCurrentSession(db);
+ const {spaceId}=await context.params;const db=createSupabaseAdminClient();const session=await getCurrentSession(db,spaceId);
  if(!session||session.space_id!==spaceId)return Response.json({error:{message:"请重新加入空间"}},{status:401});
  const input=z.object({memberId:z.string().uuid()}).safeParse(await request.json().catch(()=>null));
  if(!input.success)return Response.json({error:{message:"请选择接任成员"}},{status:400});

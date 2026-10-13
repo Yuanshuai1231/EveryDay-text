@@ -34,6 +34,12 @@
   display: grid;
   gap: 38px;
 }
+.dateBar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px; border: 1px solid #e7deed; border-radius: 16px; padding: 18px 20px; background: #faf7fd; }
+.dateCaption { color: var(--plum); font-size: 13px; font-weight: 750; }
+.dateBar p { margin: 5px 0 0; color: var(--ink-soft); font-size: 11px; line-height: 1.8; }
+.memberProgress { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 12px; color: var(--ink-soft); font-size: 10px; }
+.memberProgress span:last-child { color: #9280aa; }
+.memberEmpty { margin: 0; padding: 23px 16px; border-radius: 12px; background: #faf8fc; text-align: center; color: var(--ink-faint); font-size: 12px; }
 .ownSection,
 .groupSection {
   min-width: 0;

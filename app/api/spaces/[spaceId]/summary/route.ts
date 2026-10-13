@@ -4,7 +4,7 @@ import { spaceSummary } from "@/lib/data/space-summary";
 import { isValidWorkDate } from "@/lib/data/checkins";
 export async function GET(request:NextRequest,context:{params:Promise<{spaceId:string}>}){
  const {spaceId}=await context.params;
- const session=await getCurrentSession();
+ const session=await getCurrentSession(undefined,spaceId);
  if(!session)return Response.json({error:{message:"请先加入空间"}},{status:401});
  if(session.space_id!==spaceId)return Response.json({error:{message:"无权访问"}},{status:403});
  const date=request.nextUrl.searchParams.get("date")??undefined;

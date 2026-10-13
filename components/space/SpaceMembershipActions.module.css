@@ -1,0 +1,36 @@
+.root {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+.action {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 6px 10px;
+  border: 1px solid #f1d9d8;
+  border-radius: 9px;
+  background: #fff8f7;
+  color: #aa4542;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+.action:hover {
+  background: #ffefed;
+}
+.action:focus-visible {
+  outline: 3px solid var(--lavender);
+  outline-offset: 2px;
+}
+.action:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+.error {
+  margin: 8px 0 0;
+  color: #aa4542;
+  font-size: 12px;
+  line-height: 1.6;
+}

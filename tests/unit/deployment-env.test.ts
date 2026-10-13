@@ -12,6 +12,7 @@ function check(variables: Record<string, string> = {}) {
     "CHECKIN_STORAGE",
     "NEXT_PUBLIC_SUPABASE_URL",
     "SUPABASE_SERVICE_ROLE_KEY",
+    "NEXT_PUBLIC_SITE_URL",
   ])
     delete env[name];
   return spawnSync(process.execPath, ["scripts/check-env.mjs"], {
@@ -25,11 +26,16 @@ function checkEnvFile(content: string) {
   const directory = mkdtempSync(path.join(tmpdir(), "checkin-env-test-"));
   try {
     writeFileSync(path.join(directory, ".env.local"), content);
-    const env: NodeJS.ProcessEnv = { ...process.env, NODE_ENV: "production", VERCEL: "1" };
+    const env: NodeJS.ProcessEnv = {
+      ...process.env,
+      NODE_ENV: "production",
+      VERCEL: "1",
+    };
     for (const name of [
       "CHECKIN_STORAGE",
       "NEXT_PUBLIC_SUPABASE_URL",
       "SUPABASE_SERVICE_ROLE_KEY",
+      "NEXT_PUBLIC_SITE_URL",
     ])
       delete env[name];
     return spawnSync(
@@ -45,7 +51,7 @@ function checkEnvFile(content: string) {
 describe("deployment database configuration", () => {
   it("loads production env files before checking a local Vercel build", () => {
     const result = checkEnvFile(
-      "NEXT_PUBLIC_SUPABASE_URL=https://example.supabase.co\nSUPABASE_SERVICE_ROLE_KEY=sb_secret_env_fixture\n",
+      "NEXT_PUBLIC_SUPABASE_URL=https://example.supabase.co\nSUPABASE_SERVICE_ROLE_KEY=sb_secret_env_fixture\nNEXT_PUBLIC_SITE_URL=https://checkin.example\n",
     );
     expect(result.status).toBe(0);
     expect(result.stdout + result.stderr).not.toContain(
@@ -97,8 +103,28 @@ describe("deployment database configuration", () => {
       VERCEL: "1",
       NEXT_PUBLIC_SUPABASE_URL: "https://example.supabase.co",
       SUPABASE_SERVICE_ROLE_KEY: "sb_secret_test",
+      NEXT_PUBLIC_SITE_URL: "https://checkin.example",
     });
     expect(result.status).toBe(0);
     expect(result.stdout + result.stderr).not.toContain("sb_secret_test");
+  });
+  it("requires a site URL for cloud verification and recovery links", () => {
+    const result = check({
+      VERCEL: "1",
+      NEXT_PUBLIC_SUPABASE_URL: "https://example.supabase.co",
+      SUPABASE_SERVICE_ROLE_KEY: "sb_secret_test",
+    });
+    expect(result.status).toBe(1);
+    expect(result.stdout + result.stderr).toContain("NEXT_PUBLIC_SITE_URL");
+  });
+  it("rejects localhost email redirects on Vercel", () => {
+    expect(
+      check({
+        VERCEL: "1",
+        NEXT_PUBLIC_SUPABASE_URL: "https://example.supabase.co",
+        SUPABASE_SERVICE_ROLE_KEY: "sb_secret_test",
+        NEXT_PUBLIC_SITE_URL: "http://localhost:3000",
+      }).status,
+    ).toBe(1);
   });
 });

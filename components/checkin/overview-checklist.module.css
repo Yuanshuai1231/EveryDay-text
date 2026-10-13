@@ -1,0 +1,20 @@
+.list { display: grid; gap: 9px; padding: 0 24px 22px; }
+.row { display: flex; gap: 13px; align-items: flex-start; padding: 15px; border: 1px solid #eee7f5; border-radius: 16px; background: #fcfbfe; transition: border-color .16s, background .16s; }
+.row:hover { border-color: #cfc1e7; background: #f7f2fd; }
+.circle { width: 22px; height: 22px; border: 1.5px solid #c5b7d5; border-radius: 50%; display: grid; place-items: center; flex: 0 0 22px; color: white; margin-top: 2px; }
+.copy { min-width: 0; flex: 1; }
+.copy strong { display: block; font-size: 15px; font-weight: 600; line-height: 1.5; overflow-wrap: anywhere; }
+.copy p { margin: 5px 0 0; color: #9688a5; font-size: 13px; line-height: 1.5; white-space: pre-line; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.tags { display: flex; flex-wrap: wrap; gap: 9px; color: #9587a6; font-size: 11px; margin-top: 6px; }
+.tags:empty { display: none; }
+.tags span { display: inline-flex; align-items: center; gap: 4px; }
+.completed .circle { background: #7da88b; border-color: #7da88b; }
+.completed strong { color: #9b90a5; text-decoration: line-through; }
+.overdue { background: #fff6ee; border-color: #f7d6b9; }
+.overdue .circle { border-color: #dc9e67; }
+.tags .overdueTag { color: #b7733d; }
+.empty { display: grid; justify-items: center; gap: 8px; padding: 22px 20px 30px; text-align: center; }
+.empty > span { width: 45px; height: 45px; display: grid; place-items: center; border-radius: 15px; background: #f4edf9; color: #9b81b5; }
+.empty strong { font-size: 15px; }
+.empty p { color: #9688a5; font-size: 13px; margin: 0; }
+@media (max-width: 600px) { .list { padding: 0 16px 18px; } .row { padding: 13px; } }

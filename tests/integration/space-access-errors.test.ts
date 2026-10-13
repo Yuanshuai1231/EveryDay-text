@@ -6,16 +6,17 @@ const database = vi.hoisted(() => ({
   rpc: vi.fn(),
   create: vi.fn(),
   setCookie: vi.fn(),
+  requireAccount: vi.fn(),
 }));
 vi.mock("@/lib/supabase/server", () => ({
   createSupabaseAdminClient: database.create,
 }));
-vi.mock("@/lib/auth/session", () => ({
-  SESSION_TTL_SECONDS: 2592000,
-  setSessionCookie: database.setCookie,
+vi.mock("@/lib/auth/accounts", () => ({
+  requireAccount: database.requireAccount,
 }));
 vi.mock("@/lib/auth/rate-limit", () => ({
   joinRateLimiter: { check: () => ({ allowed: true }) },
+  spaceCreateRateLimiter: { check: () => ({ allowed: true }) },
 }));
 
 function request(path: string, body: unknown) {
@@ -47,6 +48,19 @@ const handlers = [
 beforeEach(() => {
   vi.resetAllMocks();
   database.create.mockReturnValue({ rpc: database.rpc });
+  database.requireAccount.mockResolvedValue({
+    user: {
+      id: "account-a",
+      email: "creator@example.test",
+      nickname: "小熊",
+      avatar_id: null,
+    },
+    session: {
+      id: "session-a",
+      account_id: "account-a",
+      selected_space_id: null,
+    },
+  });
   vi.spyOn(console, "error").mockImplementation(() => {});
 });
 afterEach(() => vi.restoreAllMocks());
@@ -92,7 +106,7 @@ describe("space access database failures", () => {
       expect(database.setCookie).not.toHaveBeenCalled();
     });
 
-    it(`${handler.name}: creates the browser session after a successful database transaction`, async () => {
+    it(`${handler.name}: keeps the current account session after a successful database transaction`, async () => {
       database.rpc.mockResolvedValue({
         data: [{ space_id: "space-a", member_id: "member-a" }],
         error: null,
@@ -101,7 +115,7 @@ describe("space access database failures", () => {
         request(handler.path, handler.input),
       );
       expect(response.status).toBe(201);
-      expect(database.setCookie).toHaveBeenCalledOnce();
+      expect(database.setCookie).not.toHaveBeenCalled();
     });
   }
 

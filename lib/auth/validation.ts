@@ -15,6 +15,9 @@ export const spaceNameSchema = textSchema(48);
 export const inviteSchema = z.string().regex(/^[A-Z0-9]{8}$/u, "invalid invite code");
 
 export const createSpaceSchema = z.object({ name: spaceNameSchema, nickname: nicknameSchema, timezone: z.string().trim().min(1).max(64).optional() });
+export const accountCreateSpaceSchema = z.object({ name: spaceNameSchema, avatarId: z.string().optional(), timezone: z.string().trim().min(1).max(64).optional() });
+export const accountJoinSpaceSchema = z.object({ inviteCode: inviteSchema, nickname: nicknameSchema.optional() });
+export const updateSpaceSchema = z.object({ name: spaceNameSchema, avatarId: z.string().optional() });
 export const joinSpaceSchema = z.object({ inviteCode: inviteSchema, nickname: nicknameSchema });
 
 export const ERROR_CODES = {

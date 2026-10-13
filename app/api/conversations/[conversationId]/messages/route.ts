@@ -11,7 +11,10 @@ export async function GET(request: NextRequest, context: Context) {
     const { conversationId } = await context.params;
     parseUuid(conversationId);
     const db = createSupabaseAdminClient();
-    const { member, spaceId } = await requireActiveSpaceMember(db);
+    const { data: target, error: targetError } = await db.from("conversations").select("space_id").eq("id", conversationId).maybeSingle();
+    if (targetError) throw targetError;
+    if (!target) return invalidInput("会话不存在");
+    const { member, spaceId } = await requireActiveSpaceMember(db, target.space_id);
     await requireConversationAccess(db, spaceId, conversationId, member.id);
     const limit = z.coerce.number().int().min(1).max(100).safeParse(request.nextUrl.searchParams.get("limit") ?? 50);
     if (!limit.success) return invalidInput("每页消息数量必须为 1–100");
@@ -26,7 +29,10 @@ export async function POST(request: NextRequest, context: Context) {
     const { conversationId } = await context.params;
     parseUuid(conversationId);
     const db = createSupabaseAdminClient();
-    const { member, spaceId } = await requireActiveSpaceMember(db);
+    const { data: target, error: targetError } = await db.from("conversations").select("space_id").eq("id", conversationId).maybeSingle();
+    if (targetError) throw targetError;
+    if (!target) return invalidInput("会话不存在");
+    const { member, spaceId } = await requireActiveSpaceMember(db, target.space_id);
     await requireConversationAccess(db, spaceId, conversationId, member.id);
     const input = await parseRequestBody(request, sendMessageSchema);
     const result = await sendMessage(db, conversationId, member.id, input);

@@ -1,0 +1,89 @@
+.root:global(.account-page) {
+  display: grid;
+  place-items: center;
+  padding-top: 40px;
+}
+.root:global(.account-page) :global(.public-header) {
+  position: absolute;
+  top: 24px;
+  right: clamp(18px, 4vw, 64px);
+  left: clamp(18px, 4vw, 64px);
+}
+.root:global(.account-page) :global(.public-form-card) {
+  width: min(100%, 470px);
+}
+.root:global(.account-card) {
+  position: relative;
+}
+.root:global(.account-card) :global(.form-card-description strong) {
+  color: var(--plum);
+}
+.root :global(.account-tabs) {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  margin: -4px 0 24px;
+  border-bottom: 1px solid var(--line);
+}
+.root :global(.account-tabs button) {
+  border: 0;
+  border-bottom: 2px solid transparent;
+  padding: 10px;
+  color: var(--ink-faint);
+  background: transparent;
+  font-weight: 800;
+}
+.root :global(.account-tabs button.active) {
+  color: var(--plum);
+  border-color: var(--coral);
+}
+.root :global(.password-field) {
+  display: flex;
+  align-items: center;
+  border: 1px solid #ded5df;
+  border-radius: 11px;
+  background: #fff;
+}
+.root :global(.password-field:focus-within) {
+  border-color: var(--lavender);
+  box-shadow: 0 0 0 3px rgba(154, 140, 196, 0.14);
+}
+.root :global(.password-field input) {
+  border: 0;
+  box-shadow: none;
+}
+.root :global(.password-field .icon-button) {
+  width: 39px;
+  min-width: 39px;
+  min-height: 39px;
+}
+.root :global(.account-forgot) {
+  display: block;
+  margin-top: 15px;
+  color: var(--plum);
+  font-size: 12px;
+  font-weight: 750;
+  text-align: right;
+}
+.root :global(.account-resend) {
+  margin-top: 20px;
+}
+.verificationCode {
+  font-size: 20px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.18em;
+}
+.verificationCode::placeholder {
+  font-size: 14px;
+  letter-spacing: normal;
+}
+.codeValidity {
+  margin: -4px 0 18px;
+  color: var(--ink-faint);
+  font-size: 12px;
+  line-height: 1.6;
+}
+.root :global(.account-back) {
+  margin: 19px auto 0;
+  border: 0;
+  background: transparent;
+}

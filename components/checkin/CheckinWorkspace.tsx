@@ -1,97 +1,42 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
-import { NotebookPen } from "lucide-react";
+import { useCallback, useEffect, useRef, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import { ListTodo } from "lucide-react";
 import { useSpace } from "@/components/space/SpaceProvider";
-import { LogEditor } from "./LogEditor";
+import { DatePicker } from "@/components/ui/DatePicker";
+import { TaskChecklist } from "@/components/tasks/TaskChecklist";
 import { CheckinButton } from "./CheckinButton";
 import { GroupDailyRecords } from "./GroupDailyRecords";
 import styles from "./checkin.module.css";
 
-type InitialLog = { content: string; editedAt?: string };
-
-export function CheckinWorkspace({
-  spaceId,
-  memberId,
-  selectedDate,
-  initialMorning,
-  initialAfternoon,
-  initialCheckedAt,
-  timeZone = "Asia/Shanghai",
-}: {
+export function CheckinWorkspace({ spaceId, memberId, selectedDate, initialCheckedAt, timeZone = "Asia/Shanghai" }: {
   spaceId: string;
   memberId: string;
   selectedDate: string;
-  initialMorning?: InitialLog;
-  initialAfternoon?: InitialLog;
   initialCheckedAt?: string;
   timeZone?: string;
 }) {
   const { setDate, reload } = useSpace();
-  // Shared refreshes must never replace an editor's draft or optimistic-lock baseline.
-  const [initial] = useState({
-    morning: initialMorning,
-    afternoon: initialAfternoon,
-    checkedAt: initialCheckedAt,
-  });
+  const router = useRouter();
+  const [taskLocked, setTaskLocked] = useState(false);
+  const [checkinBusy, setCheckinBusy] = useState(false);
+  const [navigating, startTransition] = useTransition();
   const reloadRef = useRef(reload);
-  useEffect(() => {
-    reloadRef.current = reload;
-  }, [reload]);
-  const onSaved = useCallback(() => {
-    void reloadRef.current().catch(() => {});
-  }, []);
-
-  useEffect(() => {
-    setDate(selectedDate);
-    return () => setDate("");
-  }, [selectedDate, setDate]);
-
-  return (
-    <div className={styles.workspace}>
-      <section
-        className={styles.ownSection}
-        aria-labelledby="own-records-title"
-      >
-        <div className={styles.sectionHeading}>
-          <div>
-            <h2 id="own-records-title">
-              <NotebookPen size={20} aria-hidden="true" />
-              我的记录
-            </h2>
-            <p>写下今天的小进步。自动保存后，伙伴就能看到。</p>
-          </div>
-          <span className={styles.autosaveNote}>输入后自动保存</span>
-        </div>
-        <div className={styles.editorGrid}>
-          <LogEditor
-            spaceId={spaceId}
-            memberId={memberId}
-            date={selectedDate}
-            slot="morning"
-            initialContent={initial.morning?.content ?? ""}
-            editedAt={initial.morning?.editedAt}
-            onSaved={onSaved}
-          />
-          <LogEditor
-            spaceId={spaceId}
-            memberId={memberId}
-            date={selectedDate}
-            slot="afternoon"
-            initialContent={initial.afternoon?.content ?? ""}
-            editedAt={initial.afternoon?.editedAt}
-            onSaved={onSaved}
-          />
-        </div>
-        <CheckinButton
-          spaceId={spaceId}
-          date={selectedDate}
-          initialCheckedAt={initial.checkedAt}
-          timeZone={timeZone}
-          onSaved={onSaved}
-        />
-      </section>
-      <GroupDailyRecords selectedDate={selectedDate} />
+  useEffect(() => { reloadRef.current = reload; }, [reload]);
+  const onSaved = useCallback(() => { void reloadRef.current().catch(() => {}); }, []);
+  useEffect(() => { setDate(selectedDate); return () => setDate(""); }, [selectedDate, setDate]);
+  const locked = taskLocked || checkinBusy || navigating;
+  return <div className={styles.workspace}>
+    <div className={styles.dateBar}>
+      <div><span className={styles.dateCaption}>查看这一天</span><p>每天的完成状态独立记录，一次任务未完成会继续保留。</p></div>
+      <DatePicker value={selectedDate} onChange={(value) => { if (locked || value === selectedDate) return; startTransition(() => { setDate(value); router.push(`/${spaceId}/checkin?date=${value}`); }); }} label="打卡日期" timeZone={timeZone} disabled={locked} />
     </div>
-  );
+    <section className={styles.ownSection} aria-labelledby="own-records-title">
+      <div className={styles.sectionHeading}><div><h2 id="own-records-title"><ListTodo size={20} aria-hidden="true" />我的任务清单</h2><p>把要做的事写下来，完成一件就勾选一件。</p></div><span className={styles.dayChip}>{selectedDate}</span></div>
+      <TaskChecklist selectedDate={selectedDate} memberId={memberId} scope="personal" ownOnly onLockChange={setTaskLocked} />
+      <CheckinButton key={selectedDate} spaceId={spaceId} date={selectedDate} initialCheckedAt={initialCheckedAt} timeZone={timeZone} onSaved={onSaved} onBusyChange={setCheckinBusy} />
+    </section>
+    <GroupDailyRecords selectedDate={selectedDate} />
+  </div>;
 }

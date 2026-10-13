@@ -28,6 +28,7 @@ function makeDb() {
       const query = {
         select() { return query; },
         eq(key: string, value: unknown) { filters.push((row) => row[key] === value); return query; },
+        lte(key: string, value: unknown) { filters.push((row) => row[key] !== null && String(row[key]) <= String(value)); return query; },
         is(key: string, value: unknown) { filters.push((row) => row[key] === value); return query; },
         in(key: string, values: unknown[]) { filters.push((row) => values.includes(row[key])); return query; },
         or(expression: string) {
@@ -65,6 +66,24 @@ function makeDb() {
       return query;
     },
     async rpc(name: string, args: Row) {
+      if (name === "create_owned_task") {
+        const task = { id: `60000000-0000-4000-8000-${String(++sequence).padStart(12, "0")}`, created_at: time, updated_at: time, completed: false, completed_at: null, completed_on: null, ends_on: null, source_log_id: null, space_id: args.p_space_id, creator_id: args.p_member_id, title: args.p_title, notes: args.p_notes, target_date: args.p_target_date, recurrence: args.p_recurrence };
+        rows.tasks.push(task);
+        return { data: { ...task, occurrence_date: task.target_date, overdue: false }, error: null };
+      }
+      if (name === "update_owned_task" || name === "delete_owned_task") {
+        const task = rows.tasks.find(row => row.id === args.p_task_id && row.space_id === args.p_space_id);
+        if (!task) return { data: null, error: { code: "P0002", message: "TASK_NOT_FOUND" } };
+        if (task.creator_id !== args.p_member_id) return { data: null, error: { code: "42501", message: "TASK_NOT_OWNER" } };
+        if (task.updated_at !== args.p_updated_at) return { data: null, error: { code: "40001", message: "TASK_VERSION_CONFLICT" } };
+        if (name === "delete_owned_task") { rows.tasks = rows.tasks.filter(row => row !== task); return { data: true, error: null }; }
+        const changes = args.p_changes as Row;
+        task.updated_at = new Date(Math.max(Date.now(), Date.parse(String(task.updated_at)) + 1)).toISOString();
+        for (const field of ["title", "notes"]) if (changes[field] !== undefined) task[field] = changes[field];
+        if (changes.targetDate !== undefined) task.target_date = changes.targetDate;
+        if (changes.completed !== undefined) { task.completed = changes.completed; task.completed_on = changes.completed ? changes.date ?? task.target_date : null; task.completed_at = changes.completed ? task.completed_at ?? task.updated_at : null; }
+        return { data: { ...task, occurrence_date: changes.date ?? task.target_date, overdue: false }, error: null };
+      }
       if (name !== "open_direct_conversation") throw new Error(`Unexpected RPC: ${name}`);
       const pair = [String(args.p_member_id), String(args.p_other_member_id)].sort();
       let conversation = rows.conversations.find((row) => row.kind === "direct" && row.direct_member_low === pair[0] && row.direct_member_high === pair[1]);
@@ -89,7 +108,7 @@ beforeEach(() => {
   auth.current = { member_id: ids.alice, space_id: ids.space, expires_at: "2099-01-01T00:00:00Z", revoked_at: null, member_removed_at: null };
   rows = {
     members: [{ id: ids.alice, space_id: ids.space, nickname: "Alice", removed_at: null }, { id: ids.bob, space_id: ids.space, nickname: "Bob", removed_at: null }, { id: ids.eve, space_id: ids.space, nickname: "Eve", removed_at: null }],
-    tasks: [{ id: ids.task, space_id: ids.space, creator_id: ids.alice, title: "Read", notes: "", target_date: "2026-09-22", completed: false, completed_at: null, updated_at: time, created_at: time }],
+    tasks: [{ id: ids.task, space_id: ids.space, creator_id: ids.alice, title: "Read", notes: "", target_date: "2026-09-22", recurrence: "once", completed_on: null, ends_on: null, source_log_id: null, completed: false, completed_at: null, updated_at: time, created_at: time }],
     conversations: [{ id: ids.group, space_id: ids.space, kind: "group", direct_member_low: null, direct_member_high: null, created_at: time }],
     conversation_members: [{ conversation_id: ids.group, member_id: ids.alice }, { conversation_id: ids.group, member_id: ids.bob }],
     messages: [],
@@ -98,12 +117,12 @@ beforeEach(() => {
 });
 
 describe("task route ownership and conditional writes", () => {
-  it("reads only selected space and date", async () => {
+  it("reads only selected space and includes unfinished earlier dates", async () => {
     const { GET } = await import("@/app/api/spaces/[spaceId]/tasks/route");
     rows.tasks.push({ ...rows.tasks[0], id: "different-date", target_date: "2026-09-21" }, { ...rows.tasks[0], id: "different-space", space_id: ids.otherSpace });
     const response = await GET(request("/?date=2026-09-22"), spaceContext());
     expect(response.status).toBe(200);
-    expect((await response.json()).tasks.map((task: Row) => task.id)).toEqual([ids.task]);
+    expect((await response.json()).tasks.map((task: Row) => task.id)).toEqual([ids.task, "different-date"]);
   });
   it("rejects removed membership even when an earlier session check passed", async () => {
     const { GET } = await import("@/app/api/spaces/[spaceId]/tasks/route");

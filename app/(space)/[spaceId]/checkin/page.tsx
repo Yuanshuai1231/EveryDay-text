@@ -13,7 +13,7 @@ export default async function CheckinPage({
 }) {
   const { spaceId } = await params;
   const db = createSupabaseAdminClient();
-  const session = await getCurrentSession(db);
+  const session = await getCurrentSession(db, spaceId);
   if (!session || session.space_id !== spaceId)
     return (
       <section>
@@ -35,12 +35,6 @@ export default async function CheckinPage({
         <p role="alert">日期无效。请从打卡页面选择有效日期。</p>
       </section>
     );
-  const { data: logs } = await db
-    .from("daily_logs")
-    .select("slot,content,edited_at")
-    .eq("space_id", spaceId)
-    .eq("member_id", session.member_id)
-    .eq("work_date", date);
   const { data: checkin } = await db
     .from("daily_checkins")
     .select("checked_in_at")
@@ -48,8 +42,6 @@ export default async function CheckinPage({
     .eq("member_id", session.member_id)
     .eq("work_date", date)
     .maybeSingle();
-  const morning = logs?.find((log) => log.slot === "morning");
-  const afternoon = logs?.find((log) => log.slot === "afternoon");
   return (
     <section className={styles.page}>
       <header className={`page-heading ${styles.pageHeader}`}>
@@ -58,21 +50,8 @@ export default async function CheckinPage({
           <h1>
             每日打卡<span className="hello-spark">✳</span>
           </h1>
-          <p>记录今天，也看看伙伴的小进步。</p>
+          <p>完成一件，勾选一件，也看看伙伴的小进步。</p>
         </div>
-        <form method="get" className={styles.dateForm}>
-          <label htmlFor="work-date">日期</label>
-          <input
-            className={styles.dateInput}
-            id="work-date"
-            name="date"
-            type="date"
-            defaultValue={date}
-          />
-          <button className="button button-secondary" type="submit">
-            查看
-          </button>
-        </form>
       </header>
       <CheckinWorkspace
         key={`${spaceId}-${date}`}
@@ -80,16 +59,6 @@ export default async function CheckinPage({
         memberId={session.member_id}
         selectedDate={date}
         timeZone={space?.timezone ?? "Asia/Shanghai"}
-        initialMorning={
-          morning
-            ? { content: morning.content, editedAt: morning.edited_at }
-            : undefined
-        }
-        initialAfternoon={
-          afternoon
-            ? { content: afternoon.content, editedAt: afternoon.edited_at }
-            : undefined
-        }
         initialCheckedAt={checkin?.checked_in_at}
       />
     </section>

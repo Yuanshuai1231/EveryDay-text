@@ -2,12 +2,14 @@ import { NextRequest } from "next/server";
 import { createHash } from "node:crypto";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
 import { resolveSession,SESSION_COOKIE } from "@/lib/auth/session";
+import { ACCOUNT_COOKIE } from "@/lib/auth/accounts";
 export const runtime="nodejs";
 export const dynamic="force-dynamic";
 export async function GET(request:NextRequest,context:{params:Promise<{spaceId:string}>}){
  const {spaceId}=await context.params;
- const db=createSupabaseAdminClient(),token=request.cookies.get(SESSION_COOKIE)?.value;
- const session=await resolveSession(token,db);
+ const db=createSupabaseAdminClient(),accountToken=request.cookies.get(ACCOUNT_COOKIE)?.value,legacyToken=request.cookies.get(SESSION_COOKIE)?.value;
+ const token=accountToken??legacyToken;
+ const session=await resolveSession(token,db,spaceId);
  if(!session||session.space_id!==spaceId)return Response.json({error:{message:"会话已失效"}},{status:401});
  let stopped=false;let timer:ReturnType<typeof setTimeout>|undefined;
  const encoder=new TextEncoder();
@@ -20,13 +22,15 @@ export async function GET(request:NextRequest,context:{params:Promise<{spaceId:s
    const poll=async()=>{
     if(stopped)return;
     try{
-     const current=await resolveSession(token,db);
+     const current=await resolveSession(token,db,spaceId);
      if(!current||current.space_id!==spaceId){send("revoked",{});close();return;}
      const c=await db.from("conversation_members").select("conversation_id").eq("member_id",session.member_id);
      const ids=(c.data??[]).map(row=>row.conversation_id);
      const result=await Promise.all([
+      db.from("spaces").select("id,name,avatar_id").eq("id",spaceId),
       db.from("members").select("id,removed_at,role,avatar_id").eq("space_id",spaceId).order("id"),
       db.from("tasks").select("id,updated_at").eq("space_id",spaceId).order("id"),
+      db.from("task_completions").select("id,work_date,completed,updated_at").eq("space_id",spaceId).order("id"),
       db.from("daily_logs").select("id,edited_at").eq("space_id",spaceId).order("id"),
       db.from("daily_checkins").select("id,checked_in_at").eq("space_id",spaceId).order("id"),
       ids.length?db.from("messages").select("id").in("conversation_id",ids).order("server_created_at",{ascending:false}).limit(1):Promise.resolve({data:[],error:null}),

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
 import { assertSameOrigin, dataErrorResponse, invalidInput, parseRequestBody, parseUuid, requireActiveSpaceMember, timestampSchema } from "@/lib/data/api";
 import { deleteTask, updateTask, updateTaskSchema } from "@/lib/data/tasks";
+import { isValidWorkDate } from "@/lib/data/checkins";
 
 type Context = { params: Promise<{ spaceId: string; taskId: string }> };
 export async function PATCH(request: NextRequest, context: Context) {
@@ -25,7 +26,9 @@ export async function DELETE(request: NextRequest, context: Context) {
     const { member } = await requireActiveSpaceMember(db, spaceId);
     const version = timestampSchema.safeParse(request.nextUrl.searchParams.get("updatedAt"));
     if (!version.success) return invalidInput("缺少任务版本，请刷新后重试");
-    await deleteTask(db, spaceId, taskId, member.id, version.data);
+    const date = request.nextUrl.searchParams.get("date");
+    if (date !== null && !isValidWorkDate(date)) return invalidInput("请选择有效日期");
+    await deleteTask(db, spaceId, taskId, member.id, version.data, date ?? undefined);
     return NextResponse.json({ ok: true });
   } catch (error) { return dataErrorResponse(error); }
 }

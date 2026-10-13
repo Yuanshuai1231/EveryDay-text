@@ -1,0 +1,132 @@
+.root :global(.space-icon) {
+  overflow: hidden;
+}
+.root :global(.account-menu-trigger) {
+  border: 1px solid var(--line);
+  background: #fff;
+}
+.root :global(.topbar-right) {
+  position: relative;
+}
+.root :global(.account-menu) {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 35;
+  min-width: 180px;
+  display: grid;
+  gap: 2px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 6px;
+  background: #fff;
+  box-shadow: var(--shadow);
+}
+.root :global(.account-menu a),
+.root :global(.account-menu button) {
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 0;
+  border-radius: 8px;
+  padding: 0 10px;
+  color: var(--ink-soft);
+  background: transparent;
+  font-size: 12px;
+  font-weight: 700;
+  text-align: left;
+}
+.root :global(.account-menu a:hover),
+.root :global(.account-menu button:hover) {
+  color: var(--plum);
+  background: var(--lavender-soft);
+}
+.root :global(.legacy-shell) {
+  width: 100%;
+  border: 1px solid #eadfb8;
+  border-radius: 10px;
+  padding: 9px;
+  color: var(--plum);
+  background: #fffbeb;
+  font-size: 11px;
+  text-align: left;
+}
+.root :global(.breadcrumb a:hover) {
+  color: var(--plum);
+}
+
+@media (min-width: 768px) {
+  .root :global(.sidebar) {
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    scrollbar-color: #d9cfdf transparent;
+  }
+}
+
+@media (min-width: 768px) and (max-height: 800px) {
+  .root :global(.sidebar) {
+    padding-top: 12px;
+    padding-bottom: 10px;
+  }
+
+  .root :global(.sidebar .brand) {
+    padding-bottom: 12px;
+  }
+
+  .root :global(.nav-caption) {
+    margin-top: 12px;
+    margin-bottom: 5px;
+  }
+
+  .root :global(.desktop-nav) {
+    gap: 2px;
+  }
+
+  .root :global(.desktop-nav a) {
+    min-height: 42px;
+  }
+
+  .root :global(.sidebar-note) {
+    display: none;
+  }
+
+  .root :global(.sidebar-help) {
+    min-height: 37px;
+    margin-top: 5px;
+    margin-bottom: 2px;
+  }
+
+  .root :global(.sidebar-profile) {
+    padding-top: 8px;
+  }
+}
+
+@media (max-width: 767px) {
+  .root :global(.topbar) {
+    gap: 8px;
+    padding-right: 12px;
+    padding-left: 12px;
+  }
+
+  .root :global(.topbar-right) {
+    gap: 7px;
+  }
+
+  .root :global(.topbar-right > button[aria-label="更换头像"]) {
+    min-width: 36px;
+    min-height: 36px;
+    padding: 2px;
+  }
+
+  .root :global(.topbar-right > button[aria-label="更换头像"] .avatar) {
+    display: block;
+    width: 30px;
+    height: 30px;
+  }
+
+  .root :global(.workspace) {
+    padding-bottom: calc(88px + env(safe-area-inset-bottom));
+  }
+}

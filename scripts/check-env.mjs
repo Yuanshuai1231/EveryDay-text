@@ -13,7 +13,11 @@ const cloud =
 console.log(cloud ? "存储模式：Supabase" : "存储模式：本地 PostgreSQL");
 let invalid = false;
 for (const name of cloud
-  ? ["NEXT_PUBLIC_SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+  ? [
+      "NEXT_PUBLIC_SUPABASE_URL",
+      "SUPABASE_SERVICE_ROLE_KEY",
+      "NEXT_PUBLIC_SITE_URL",
+    ]
   : []) {
   const present = Boolean(process.env[name]?.trim());
   console.log(name + ": " + (present ? "已配置" : "缺失"));
@@ -43,6 +47,30 @@ if (cloud && process.env.NEXT_PUBLIC_SUPABASE_URL) {
   }
 }
 const key = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
+if (cloud && process.env.NEXT_PUBLIC_SITE_URL) {
+  try {
+    const site = new URL(process.env.NEXT_PUBLIC_SITE_URL);
+    const local =
+      site.hostname === "localhost" ||
+      site.hostname === "[::1]" ||
+      site.hostname.startsWith("127.");
+    if (
+      !["http:", "https:"].includes(site.protocol) ||
+      site.username ||
+      site.password ||
+      site.search ||
+      site.hash ||
+      site.pathname !== "/" ||
+      (vercel && (site.protocol !== "https:" || local))
+    )
+      throw new Error("invalid site origin");
+  } catch {
+    console.error(
+      "NEXT_PUBLIC_SITE_URL 必须是网站地址；Vercel 生产邮件链接需要公开 HTTPS 地址，不能填写 localhost。",
+    );
+    invalid = true;
+  }
+}
 if (cloud && key) {
   let publicKey = key.startsWith("sb_publishable_");
   if (key.split(".").length === 3) {

@@ -5,7 +5,7 @@ import { ERROR_CODES, errorResponse } from "@/lib/auth/validation";
 import { hasSameOrigin, isObject, isValidWorkDate } from "@/lib/data/checkins";
 
 export async function GET(request: NextRequest, context: { params: Promise<{ spaceId: string }> }) {
-  const { spaceId } = await context.params; const db = createSupabaseAdminClient(); const session = await getCurrentSession(db);
+  const { spaceId } = await context.params; const db = createSupabaseAdminClient(); const session = await getCurrentSession(db, spaceId);
   if (!session) return errorResponse(ERROR_CODES.UNAUTHORIZED, "会话已失效", 401); if (session.space_id !== spaceId) return errorResponse(ERROR_CODES.FORBIDDEN, "无权访问该空间", 403);
   const date = request.nextUrl.searchParams.get("date") ?? ""; if (!isValidWorkDate(date)) return errorResponse(ERROR_CODES.INVALID_INPUT, "日期无效", 400);
   const { data, error } = await db.from("daily_checkins").select("*").eq("space_id", spaceId).eq("work_date", date);
@@ -14,7 +14,7 @@ export async function GET(request: NextRequest, context: { params: Promise<{ spa
 
 export async function PUT(request: NextRequest, context: { params: Promise<{ spaceId: string }> }) {
   if (!hasSameOrigin(request)) return errorResponse(ERROR_CODES.FORBIDDEN, "请求来源无效", 403);
-  const { spaceId } = await context.params; const db = createSupabaseAdminClient(); const session = await getCurrentSession(db);
+  const { spaceId } = await context.params; const db = createSupabaseAdminClient(); const session = await getCurrentSession(db, spaceId);
   if (!session) return errorResponse(ERROR_CODES.UNAUTHORIZED, "会话已失效", 401); if (session.space_id !== spaceId) return errorResponse(ERROR_CODES.FORBIDDEN, "无权访问该空间", 403);
   let body: unknown; try { body = await request.json(); } catch { return errorResponse(ERROR_CODES.INVALID_INPUT, "请求格式无效", 400); }
   if (!isObject(body)) return errorResponse(ERROR_CODES.INVALID_INPUT, "请求格式无效", 400);
