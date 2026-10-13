@@ -12,7 +12,7 @@ type MailDelivery = "preview" | "smtp" | "supabase";
 type MailResult = { mailDelivery?: MailDelivery; devMailUrl?: string };
 type AuthResult = MailResult & {
   requiresVerification?: boolean;
-  verificationMethod?: "code";
+  verificationMethod?: "code" | "link";
   expiresIn?: number;
   resendAfter?: number;
   retryAfter?: number;
@@ -50,6 +50,7 @@ export function AccountPanel() {
     email: string;
     devMailUrl?: string;
     mailDelivery: MailDelivery | null;
+    verificationMethod: "code" | "link";
     submitted: boolean;
     expiresIn: number;
   } | null>(null);
@@ -144,6 +145,7 @@ export function AccountPanel() {
           mode === "register" ? getMailDelivery(result) : null;
         setVerification({
           email: email.trim(),
+          verificationMethod: result.verificationMethod ?? "code",
           devMailUrl:
             mailDelivery === "preview" ? result.devMailUrl : undefined,
           mailDelivery,
@@ -200,6 +202,8 @@ export function AccountPanel() {
         value
           ? {
               ...value,
+              verificationMethod:
+                result.verificationMethod ?? value.verificationMethod,
               submitted: true,
               mailDelivery,
               expiresIn: result.expiresIn ?? 600,
@@ -246,6 +250,7 @@ export function AccountPanel() {
 
   if (verification) {
     const preview = verification.mailDelivery === "preview";
+    const linkVerification = verification.verificationMethod === "link";
     return (
       <section
         className={`public-form-card account-card ${styles.root}`}
@@ -258,23 +263,29 @@ export function AccountPanel() {
         <p className="eyebrow">
           {preview
             ? "LOCAL EMAIL PREVIEW"
-            : verification.submitted
+            : linkVerification
               ? "CHECK YOUR INBOX"
-              : "VERIFY YOUR EMAIL"}
+              : verification.submitted
+                ? "CHECK YOUR INBOX"
+                : "VERIFY YOUR EMAIL"}
         </p>
         <h2>
           {preview
             ? "验证码已生成"
-            : verification.submitted
-              ? "输入邮箱验证码"
-              : "先验证邮箱"}
+            : linkVerification
+              ? "请查收确认邮件"
+              : verification.submitted
+                ? "输入邮箱验证码"
+                : "先验证邮箱"}
         </h2>
         <p className="form-card-description">
           {preview
             ? "当前使用本地邮件预览，验证码没有发送到真实邮箱。"
-            : verification.submitted
-              ? "验证码邮件已提交发送，请检查收件箱和垃圾邮件。"
-              : "这个账号需要先完成邮箱验证。请输入已有验证码，或申请发送新的验证码。"}
+            : linkVerification
+              ? "确认邮件已发送，请点击邮件中的确认链接完成注册。"
+              : verification.submitted
+                ? "验证码邮件已提交发送，请检查收件箱和垃圾邮件。"
+                : "这个账号需要先完成邮箱验证。请输入已有验证码，或申请发送新的验证码。"}
         </p>
         <p className="form-card-description">
           需要验证的邮箱：<strong>{verification.email}</strong>
@@ -285,46 +296,52 @@ export function AccountPanel() {
             {resent
               ? preview
                 ? "验证码已重新生成，请打开本地预览查看。"
-                : "验证码邮件已再次提交发送，请检查收件箱和垃圾邮件。"
-              : "在下方输入 6 位数字验证码，完成验证后进入你的空间。"}
+                : linkVerification
+                  ? "确认邮件已再次发送，请点击邮件中的确认链接。"
+                  : "验证码邮件已再次提交发送，请检查收件箱和垃圾邮件。"
+              : linkVerification
+                ? "打开邮件并点击确认链接，验证完成后会自动进入你的空间。"
+                : "在下方输入 6 位数字验证码，完成验证后进入你的空间。"}
           </p>
         </div>
-        <form onSubmit={verifyCode}>
-          <label className="field">
-            验证码
-            <input
-              className={styles.verificationCode}
-              aria-label="验证码"
-              aria-describedby="verification-code-validity"
-              required
-              type="text"
-              inputMode="numeric"
-              autoComplete="one-time-code"
-              maxLength={6}
-              pattern="[0-9]{6}"
-              value={code}
-              onChange={(event) => setCode(event.target.value)}
-              placeholder="6 位数字验证码"
-              disabled={busy}
-            />
-          </label>
-          <p id="verification-code-validity" className={styles.codeValidity}>
-            验证码 {Math.ceil(verification.expiresIn / 60)}{" "}
-            分钟内有效，请及时输入。
-          </p>
-          {error && (
-            <p role="alert" className="form-error">
-              {error}
+        {linkVerification ? null : (
+          <form onSubmit={verifyCode}>
+            <label className="field">
+              验证码
+              <input
+                className={styles.verificationCode}
+                aria-label="验证码"
+                aria-describedby="verification-code-validity"
+                required
+                type="text"
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                maxLength={6}
+                pattern="[0-9]{6}"
+                value={code}
+                onChange={(event) => setCode(event.target.value)}
+                placeholder="6 位数字验证码"
+                disabled={busy}
+              />
+            </label>
+            <p id="verification-code-validity" className={styles.codeValidity}>
+              验证码 {Math.ceil(verification.expiresIn / 60)}{" "}
+              分钟内有效，请及时输入。
             </p>
-          )}
-          <button
-            type="submit"
-            className="button button-primary full-width"
-            disabled={busy || !/^[0-9]{6}$/.test(code)}
-          >
-            {busy ? "请稍候…" : "验证并进入空间"}
-          </button>
-        </form>
+            {error && (
+              <p role="alert" className="form-error">
+                {error}
+              </p>
+            )}
+            <button
+              type="submit"
+              className="button button-primary full-width"
+              disabled={busy || !/^[0-9]{6}$/.test(code)}
+            >
+              {busy ? "请稍候…" : "验证并进入空间"}
+            </button>
+          </form>
+        )}
         {preview && verification.devMailUrl && (
           <Link
             className="text-button"
@@ -341,12 +358,16 @@ export function AccountPanel() {
           disabled={busy || resendSeconds > 0}
         >
           {resendSeconds > 0
-            ? `${resendSeconds} 秒后可重新发送验证码`
+            ? `${resendSeconds} 秒后可重新发送${linkVerification ? "确认邮件" : "验证码"}`
             : !verification.submitted
-              ? "发送验证码"
+              ? linkVerification
+                ? "发送确认邮件"
+                : "发送验证码"
               : preview
                 ? "重新生成验证码"
-                : "重新发送验证码"}
+                : linkVerification
+                  ? "重新发送确认邮件"
+                  : "重新发送验证码"}
         </button>
         <button
           type="button"

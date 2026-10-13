@@ -400,7 +400,10 @@ describe("local email account routes", () => {
       "198.51.100.1",
     );
     expect(response.status).toBe(202);
-    expect(await response.json()).toMatchObject({ requiresVerification: true });
+    expect(await response.json()).toMatchObject({
+      requiresVerification: true,
+      verificationMethod: "code",
+    });
     expect(response.headers.has("set-cookie")).toBe(false);
     const account = await db.query<{
       email: string;
@@ -943,7 +946,7 @@ describe("Supabase Auth provider boundary with isolated PostgreSQL", () => {
         email: "pending@example.com",
         password: "pending-password-value",
       }),
-    ).toEqual({ unverified: true });
+    ).toEqual({ unverified: true, verificationMethod: "link" });
   });
   it("keeps the provider client separate from DB authorization and refuses repeated pending signup", async () => {
     const id = "20000000-0000-4000-8000-000000000001";

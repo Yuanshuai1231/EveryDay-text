@@ -29,6 +29,12 @@ import {
 
 export const GENERIC_MESSAGE =
   "如果该邮箱可以接收邮件，我们已发送操作说明，请查看收件箱。";
+const LINK_VERIFICATION_INFO = {
+  requiresVerification: true,
+  verificationMethod: "link",
+  expiresIn: 600,
+  resendAfter: 60,
+} as const;
 const PREVIEW_MESSAGE =
   "如果该邮箱符合操作条件，本地邮件已生成，请查看本地测试收件箱。此模式不会发送到真实邮箱。";
 export const isCloudAuth = () =>
@@ -95,7 +101,8 @@ export async function loginLocal(body: Record<string, unknown>) {
     !(await verifyPassword(password, String(account.password_hash)))
   )
     return null;
-  if (!account.verified_at) return { unverified: true } as const;
+  if (!account.verified_at)
+    return { unverified: true, verificationMethod: "code" } as const;
   const session = await createAccountSession(String(account.id));
   return { account, ...session };
 }
@@ -181,7 +188,7 @@ export async function registerCloud(body: Record<string, unknown>) {
     if (!existing.verified_at) await resendCloud(email);
     return {
       message: GENERIC_MESSAGE,
-      ...CODE_VERIFICATION_INFO,
+      ...LINK_VERIFICATION_INFO,
       ...mailResponseInfo("supabase"),
     };
   }
@@ -222,7 +229,7 @@ export async function registerCloud(body: Record<string, unknown>) {
   }
   return {
     message: GENERIC_MESSAGE,
-    ...CODE_VERIFICATION_INFO,
+    ...LINK_VERIFICATION_INFO,
     ...mailResponseInfo("supabase"),
   };
 }
@@ -238,7 +245,7 @@ export async function loginCloud(body: Record<string, unknown>) {
     password,
   });
   if (error?.code === "email_not_confirmed")
-    return { unverified: true } as const;
+    return { unverified: true, verificationMethod: "link" } as const;
   if (error || !data.user || !data.user.email_confirmed_at) return null;
   const account =
     (await getAccountById(data.user.id)) ??
@@ -276,7 +283,7 @@ export async function resendCloud(emailInput: unknown) {
   if (error) cloudMailError(error);
   return {
     message: GENERIC_MESSAGE,
-    ...CODE_VERIFICATION_INFO,
+    ...LINK_VERIFICATION_INFO,
     ...mailResponseInfo("supabase"),
   };
 }

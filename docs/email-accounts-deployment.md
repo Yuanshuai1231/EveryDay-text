@@ -32,19 +32,27 @@
 
 1. Authentication → Sign In / Providers → Email：启用邮箱登录并开启 Confirm email。
 2. URL Configuration：Site URL 设置为 `https://every-day-text.vercel.app`，允许重定向到该域名的 `/auth/confirm`。
-3. Email Templates → Confirm signup：正文显示数字验证码，使用如下模板。注册页面会提交验证码到 Supabase 的 `verifyOtp` 接口，而无需点击邮件链接。
+3. Email Templates → Confirm signup：线上 Supabase 使用确认链接，不要使用默认的 `{{ .ConfirmationURL }}` 模板。请把正文改成直接携带一次性 `token_hash` 的链接，注册页面会提示用户点击邮件完成验证：
 
    ```html
    <h2>叮咚小组邮箱验证</h2>
-   <p>你的验证码是：</p>
-   <p style="font-size:32px;letter-spacing:8px">{{ .Token }}</p>
-   <p>请在网站输入验证码，有效期 10 分钟。如果不是你本人操作，请忽略此邮件。</p>
+   <p>请点击下面的按钮确认邮箱并完成注册：</p>
+   <p>
+     <a
+       href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email"
+       >确认邮箱</a
+     >
+   </p>
+   <p>如果不是你本人操作，请忽略此邮件。</p>
    ```
 
-4. Email 登录设置中将 Email OTP Expiry 设置为 600 秒，验证码长度设为 6 位。Email Templates → Reset password 保留邮件链接：
+4. Email Templates → Reset password 保留服务端一次性链接：
 
    ```html
-   <a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=recovery">设置新密码</a>
+   <a
+     href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=recovery"
+     >设置新密码</a
+   >
    ```
 
 5. Authentication → SMTP Settings：为真实用户配置发信服务与发件邮箱。Supabase 默认邮件服务仅用于试用，并限制收件地址与频率；正式网站需要自定义 SMTP。不要在聊天或仓库中公开 SMTP 密码。
@@ -54,6 +62,6 @@
 
 ## 身份与权限
 
-已注册并验证过的邮箱再次注册或申请注册验证码时会提示直接登录，不发送新的注册验证码。未验证账号重复注册会保留首次设置的密码与昵称。本地账号模式中，SMTP 失败时不显示发送成功；上一个仍有效的验证码保持有效，数字验证码错误 5 次后必须申请新码，正确验证只能消费一次。Supabase 模式的验证码有效期、发送频率和验证限流由 Supabase Auth 设置控制，需在上线前按上述配置并验收。旧版已发送的验证链接仍兼容，但新注册使用数字验证码。
+已注册并验证过的邮箱再次注册或申请确认邮件时会提示直接登录，不发送新的注册邮件。未验证账号重复注册会保留首次设置的密码与昵称。本地账号模式继续使用 6 位验证码；Supabase 云端模式使用确认链接，发送频率和验证限流由 Supabase Auth 控制。修改模板后请使用新注册邮箱测试，旧邮件只能使用一次且可能已经过期。
 
 旧用户需要保留原浏览器身份才能绑定已有空间，不能用昵称认领历史或创建者权限。新账号即使知道旧昵称，也不能绑定别人的成员。移除/退出一个小组不会删除邮箱账号或其他小组权限。密码找回需要验证邮件的一次性授权，完成后原账号会话失效，需要重新登录。

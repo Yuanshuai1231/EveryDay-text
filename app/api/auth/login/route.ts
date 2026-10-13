@@ -27,6 +27,7 @@ export async function POST(request: NextRequest) {
         {
           error: { code: "UNVERIFIED", message: "请先验证邮箱" },
           requiresVerification: true,
+          verificationMethod: result.verificationMethod ?? "code",
         },
         { status: 401 },
       );

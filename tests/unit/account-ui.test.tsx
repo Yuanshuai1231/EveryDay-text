@@ -176,28 +176,44 @@ describe("account entry", () => {
     ).toBe("/dev/mail/1");
   });
 
-  it.each(["smtp", "supabase"])(
-    "shows real code mail submission accurately (%s)",
-    async (mailDelivery) => {
-      mockAccountRequests({
-        "/api/auth/register": authResponse(
-          mailResult(mailDelivery, "/dev/mail/stale"),
-        ),
-      });
-      render(<PublicHomePage />);
-      await registerAccount();
-      expect(
-        screen.getByRole("heading", { name: "输入邮箱验证码" }),
-      ).toBeTruthy();
-      expect(screen.getByRole("status").textContent).toContain(
-        "验证码邮件已提交发送，请检查收件箱和垃圾邮件。",
-      );
-      expect(
-        screen.queryByRole("link", { name: "查看本地邮件预览" }),
-      ).toBeNull();
-      expect(push).not.toHaveBeenCalled();
-    },
-  );
+  it("shows real code mail submission accurately for SMTP", async () => {
+    const mailDelivery = "smtp";
+    mockAccountRequests({
+      "/api/auth/register": authResponse(
+        mailResult(mailDelivery, "/dev/mail/stale"),
+      ),
+    });
+    render(<PublicHomePage />);
+    await registerAccount();
+    expect(
+      screen.getByRole("heading", { name: "输入邮箱验证码" }),
+    ).toBeTruthy();
+    expect(screen.getByRole("status").textContent).toContain(
+      "验证码邮件已提交发送，请检查收件箱和垃圾邮件。",
+    );
+    expect(screen.queryByRole("link", { name: "查看本地邮件预览" })).toBeNull();
+    expect(push).not.toHaveBeenCalled();
+  });
+
+  it("uses the Supabase confirmation link instead of asking for a code", async () => {
+    mockAccountRequests({
+      "/api/auth/register": authResponse({
+        ...mailResult("supabase"),
+        verificationMethod: "link",
+      }),
+    });
+    render(<PublicHomePage />);
+    await registerAccount();
+    expect(
+      screen.getByRole("heading", { name: "请查收确认邮件" }),
+    ).toBeTruthy();
+    expect(screen.getByRole("status").textContent).toContain(
+      "点击邮件中的确认链接",
+    );
+    expect(screen.queryByLabelText("验证码")).toBeNull();
+    expect(screen.queryByRole("button", { name: "验证并进入空间" })).toBeNull();
+    expect(screen.getByRole("button", { name: /确认邮件/ })).toBeTruthy();
+  });
 
   it("keeps registration retryable when code email submission fails", async () => {
     mockAccountRequests({
