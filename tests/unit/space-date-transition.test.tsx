@@ -57,11 +57,12 @@ function data(date: string, content: string) {
   };
 }
 function Preview({ view }: { view: "overview" | "tasks" }) {
-  const { setDate } = useSpace();
+  const { setDate, reload } = useSpace();
   return (
     <>
       <button onClick={() => setDate("2026-10-12")}>历史日期</button>
       <button onClick={() => setDate("")}>返回今天</button>
+      <button onClick={() => void reload()}>重新加载数据</button>
       {view === "overview" ? <SpaceOverview /> : <TaskBoard />}
     </>
   );
@@ -93,7 +94,7 @@ describe("space date transitions", () => {
           if (initial) {
             initial = false;
             return Promise.resolve(
-              Response.json(data("2026-10-13", "今天的记录")),
+            Response.json(data("2026-10-13", "今天的记录")),
             );
           }
           return new Promise<Response>((resolve) => {
@@ -119,4 +120,34 @@ describe("space date transitions", () => {
       await waitFor(() => expect(screen.queryAllByText(`${prefix}今天的记录`).length).toBeGreaterThan(0));
     },
   );
+
+  it("coalesces duplicate refreshes while a summary request is in flight", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-10-13T03:00:00Z"));
+    vi.stubGlobal("EventSource", Events);
+    let initial = true;
+    let resolveRefresh!: (response: Response) => void;
+    const fetchMock = vi.fn(() => {
+      if (initial) {
+        initial = false;
+        return Promise.resolve(Response.json(data("2026-10-13", "今天的记录")));
+      }
+      return new Promise<Response>((resolve) => {
+        resolveRefresh = resolve;
+      });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    render(
+      <SpaceProvider spaceId="space">
+        <Preview view="overview" />
+      </SpaceProvider>,
+    );
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(screen.queryByRole("status")).toBeNull());
+    fireEvent.click(screen.getByRole("button", { name: "重新加载数据" }));
+    fireEvent.click(screen.getByRole("button", { name: "重新加载数据" }));
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
+    resolveRefresh(Response.json(data("2026-10-13", "刷新完成")));
+    await waitFor(() => expect(screen.queryByRole("status")).toBeNull());
+  });
 });

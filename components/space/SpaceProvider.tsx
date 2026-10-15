@@ -28,14 +28,33 @@ export function SpaceProvider({ spaceId, children }: { spaceId: string; children
   const [error, setError] = useState("");
   const [connection, setConnection] = useState<SpaceState["connection"]>("connecting");
   const requestId = useRef(0);
+  const inFlight = useRef<{ key: string; promise: Promise<void> } | null>(null);
   const reload = useCallback(async () => {
+    const key = date;
+    if (inFlight.current?.key === key) return inFlight.current.promise;
     const id = ++requestId.current;
-    try {
-      const result = await requestJson<SpaceSummary>(`/api/spaces/${spaceId}/summary${date ? `?date=${date}` : ""}`);
-      if (id !== requestId.current) return;
-      setData(result); setError("");
-    } catch (e) { if (id === requestId.current) { setError(e instanceof Error ? e.message : "连接失败，请检查网络"); if ((e as { status?: number }).status === 401 || (e as { status?: number }).status === 403) { setData(null); eventSource.current?.close(); router.replace("/join"); } } }
-    finally { if (id === requestId.current) setLoading(false); }
+    const promise = (async () => {
+      try {
+        const result = await requestJson<SpaceSummary>(`/api/spaces/${spaceId}/summary${date ? `?date=${date}` : ""}`);
+        if (id !== requestId.current) return;
+        setData(result); setError("");
+      } catch (e) {
+        if (id === requestId.current) {
+          setError(e instanceof Error ? e.message : "连接失败，请检查网络");
+          if ((e as { status?: number }).status === 401 || (e as { status?: number }).status === 403) {
+            setData(null); eventSource.current?.close(); router.replace("/join");
+          }
+        }
+      } finally {
+        if (id === requestId.current) setLoading(false);
+      }
+    })();
+    inFlight.current = { key, promise };
+    void promise.then(
+      () => { if (inFlight.current?.promise === promise) inFlight.current = null; },
+      () => { if (inFlight.current?.promise === promise) inFlight.current = null; },
+    );
+    return promise;
   }, [spaceId, date, router]);
   useEffect(() => {
     const requestCounter = requestId;
