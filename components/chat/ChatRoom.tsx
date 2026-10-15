@@ -39,6 +39,7 @@ type Message = {
   status?: "sending" | "failed";
   readByOthers?: boolean;
 };
+const CHAT_EMOJIS = ["😊", "😂", "😍", "🥳", "👍", "👏", "💪", "🌈", "☀️", "🌱", "🎉", "❤️"];
 function mergeMessages(current: Message[], incoming: Message[]) {
   const merged = [...current];
   for (const message of incoming) {
@@ -71,7 +72,9 @@ export function ChatRoom() {
   const [opening, setOpening] = useState("");
   const [mobileList, setMobileList] = useState(false);
   const [newCount, setNewCount] = useState(0);
+  const [emojiOpen, setEmojiOpen] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const atBottom = useRef(true);
   const known = useRef<Record<string, Set<string>>>({});
   const selectedRef = useRef("");
@@ -298,6 +301,19 @@ export function ChatRoom() {
     setDrafts((current) => ({ ...current, [selected]: "" }));
     void send(message);
     scrollToBottom();
+  }
+  function insertEmoji(emoji: string) {
+    const input = textareaRef.current;
+    const currentDraft = drafts[selected] || "";
+    const start = input?.selectionStart ?? currentDraft.length;
+    const end = input?.selectionEnd ?? start;
+    const next = `${currentDraft.slice(0, start)}${emoji}${currentDraft.slice(end)}`;
+    setDrafts((current) => ({ ...current, [selected]: next }));
+    setEmojiOpen(false);
+    requestAnimationFrame(() => {
+      input?.focus();
+      input?.setSelectionRange(start + emoji.length, start + emoji.length);
+    });
   }
   if (!data) return null;
   const current = conversations.find((item) => item.id === selected);
@@ -549,10 +565,33 @@ export function ChatRoom() {
           )}
           <form className="chat-composer" onSubmit={submit}>
             <div className="composer-toolbar">
-              <Smile size={18} />
+              <button
+                type="button"
+                className="emoji-trigger"
+                aria-label="打开表情"
+                aria-expanded={emojiOpen}
+                onClick={() => setEmojiOpen((open) => !open)}
+              >
+                <Smile size={18} />
+              </button>
               <span>说点什么吧，伙伴们在这里。</span>
+              {emojiOpen && (
+                <div className="emoji-picker" role="group" aria-label="表情符号">
+                  {CHAT_EMOJIS.map((emoji) => (
+                    <button
+                      type="button"
+                      key={emoji}
+                      aria-label={emoji}
+                      onClick={() => insertEmoji(emoji)}
+                    >
+                      {emoji}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
             <textarea
+              ref={textareaRef}
               aria-label="聊天消息"
               value={drafts[selected] || ""}
               onChange={(e) =>

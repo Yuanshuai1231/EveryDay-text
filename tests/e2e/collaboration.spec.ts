@@ -343,7 +343,12 @@ test("可通过页面创建空间、自动保存记录、创建勾选任务和�
       page.getByRole("button", { name: "恢复任务：读完一本喜欢的书" }),
     ).toHaveAttribute("aria-pressed", "true");
     await page.goto("/" + spaceId + "/chat");
+    await expect(page.getByLabel("聊天消息")).toBeVisible();
     await expect(page.getByLabel("聊天消息")).toBeEnabled();
+    await page.getByRole("button", { name: "打开表情" }).click();
+    await page.getByRole("button", { name: "😊" }).click();
+    await expect(page.getByLabel("聊天消息")).toHaveValue("😊");
+    await page.getByLabel("聊天消息").fill("");
     await page.getByLabel("聊天消息").fill("今天也一起加油 🌈");
     await page.getByRole("button", { name: "发送", exact: true }).click();
     await expect(
