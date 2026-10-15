@@ -185,7 +185,7 @@ describe("task checklist interactions", () => {
       name: "完成任务：阅读十分钟",
     });
     fireEvent.click(toggle);
-    expect(toggle.getAttribute("aria-checked")).toBe("false");
+    expect(toggle.getAttribute("aria-checked")).toBe("true");
     expect((toggle as HTMLButtonElement).disabled).toBe(true);
     expect(
       JSON.parse(vi.mocked(fetch).mock.calls[0][1]?.body as string),
@@ -294,6 +294,23 @@ describe("task checklist interactions", () => {
       within(own).getByRole("button", { name: "完成今日打卡 ✓" }),
     ).toBeTruthy();
     expect(screen.queryByRole("textbox", { name: "上午记录" })).toBeNull();
+  });
+  it("reflects check-in immediately while saving in the background", async () => {
+    let finish!: (value: Response) => void;
+    vi.mocked(fetch).mockReturnValue(
+      new Promise<Response>((resolve) => {
+        finish = resolve;
+      }),
+    );
+    render(
+      <CheckinWorkspace spaceId="space" memberId="me" selectedDate={date} />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "完成今日打卡 ✓" }));
+    expect(
+      screen.getByRole("button", { name: "更新完成时间" }),
+    ).toBeTruthy();
+    expect(screen.getByRole("status").textContent).toContain("已完成");
+    await act(async () => finish(response()));
   });
   it("does not relabel old tasks during a date transition", () => {
     provide(summary(), "2026-10-14");

@@ -5,7 +5,6 @@ import {
   CalendarDays,
   Check,
   ListTodo,
-  LoaderCircle,
   Pencil,
   Plus,
   Repeat2,
@@ -99,15 +98,7 @@ export function TaskList({
                 className={`${styles.check} ${task.completed ? styles.checked : ""}`}
                 onClick={() => onToggle?.(task)}
               >
-                {busy === task.id ? (
-                  <LoaderCircle
-                    size={14}
-                    className={styles.spinner}
-                    aria-hidden="true"
-                  />
-                ) : (
-                  task.completed && <Check size={14} aria-hidden="true" />
-                )}
+                {task.completed && <Check size={14} aria-hidden="true" />}
               </button>
             )}
             <div className={styles.body}>
@@ -291,12 +282,15 @@ export function TaskChecklist({
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [optimisticTasks, setOptimisticTasks] = useState<Record<string, Task>>({});
   const lock = !!busy || !!draft || !!deleting;
   const editorId = useId();
   const deleteId = useId();
   const matchingDate = data?.date === selectedDate;
   const tasks = matchingDate
-    ? tasksForDate(data.tasks, selectedDate).filter(
+    ? tasksForDate(data.tasks, selectedDate)
+        .map((task) => optimisticTasks[task.id] ?? task)
+        .filter(
         (task) =>
           (task.scope ?? "personal") === scope &&
           (!ownOnly || task.creator_id === memberId),
@@ -398,9 +392,22 @@ export function TaskChecklist({
     )
       return;
     const operationDate = selectedDate;
+    const previousCompleted = task.completed;
+    const optimisticTask = {
+      ...task,
+      completed: !previousCompleted,
+      completed_on: !previousCompleted ? operationDate : null,
+      completed_at: !previousCompleted ? new Date().toISOString() : null,
+    };
     setBusy(task.id);
     setError("");
     setNotice("");
+    // Reflect the click immediately; the shared provider refresh reconciles
+    // the server result in the background.
+    const currentData = data;
+    if (currentData) {
+      setOptimisticTasks((items) => ({ ...items, [task.id]: optimisticTask }));
+    }
     try {
       await requestJson(`/api/spaces/${spaceId}/tasks/${task.id}`, {
         method: "PATCH",
@@ -411,7 +418,17 @@ export function TaskChecklist({
         }),
       });
       await refresh();
+      setOptimisticTasks((items) => {
+        const next = { ...items };
+        delete next[task.id];
+        return next;
+      });
     } catch (e) {
+      setOptimisticTasks((items) => {
+        const next = { ...items };
+        delete next[task.id];
+        return next;
+      });
       setError(e instanceof Error ? e.message : "更新失败，请重试");
       await refresh();
     } finally {

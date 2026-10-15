@@ -24,6 +24,10 @@ export function CheckinButton({
   async function complete(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (busy) return;
+    const previousCheckedAt = checkedAt;
+    const optimisticCheckedAt = new Date().toISOString();
+    setCheckedAt(optimisticCheckedAt);
+    setError("");
     setBusy(true);
     onBusyChange?.(true);
     try {
@@ -40,6 +44,7 @@ export function CheckinButton({
         .then(() => onSaved?.())
         .catch(() => {});
     } catch {
+      setCheckedAt(previousCheckedAt);
       setError("打卡失败，请重试");
     } finally {
       setBusy(false);
@@ -54,7 +59,7 @@ export function CheckinButton({
       className={styles.completionForm}
     >
       <button type="submit" className="button button-primary" disabled={busy}>
-        {busy ? "正在打卡…" : checkedAt ? "更新完成时间" : "完成今日打卡 ✓"}
+        {checkedAt ? "更新完成时间" : busy ? "正在打卡…" : "完成今日打卡 ✓"}
       </button>
       <p role="status">
         {error ||
