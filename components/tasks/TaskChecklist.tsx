@@ -28,6 +28,15 @@ export function tasksForDate(tasks: Task[], date: string) {
   );
 }
 
+/** Read the current multi-assignee field while keeping older task rows usable. */
+export function taskAssigneeIds(task: Task) {
+  return task.assignee_ids?.length
+    ? task.assignee_ids
+    : task.assignee_id
+      ? [task.assignee_id]
+      : [];
+}
+
 export function TaskList({
   tasks,
   memberId,
@@ -55,11 +64,12 @@ export function TaskList({
       {tasks.map((task) => {
         const own = !readOnly && task.creator_id === memberId;
         const group = task.scope === "group";
-        const assignee = members.find(
-          (member) => member.id === task.assignee_id,
-        );
+        const assignees = taskAssigneeIds(task)
+          .map((id) => members.find((member) => member.id === id))
+          .filter((member): member is Member => !!member);
         const canComplete =
-          !readOnly && (group ? task.assignee_id === memberId : own);
+          !readOnly &&
+          (group ? taskAssigneeIds(task).includes(memberId ?? "") : own);
         const creator = members.find((member) => member.id === task.creator_id);
         return (
           <li
@@ -127,11 +137,16 @@ export function TaskList({
                 >
                   {task.completed ? "已完成" : "待完成"}
                 </span>
-                {group && assignee && (
-                  <span>
-                    <Avatar member={assignee} size="sm" />
-                    负责人：{assignee.nickname}
-                    {assignee.removed_at ? "（已离开）" : ""}
+                {group && assignees.length > 0 && (
+                  <span className={styles.assigneeList}>
+                    <span>负责人：</span>
+                    {assignees.map((assignee) => (
+                      <span key={assignee.id} className={styles.assignee}>
+                        <Avatar member={assignee} size="sm" />
+                        {assignee.nickname}
+                        {assignee.removed_at ? "（已离开）" : ""}
+                      </span>
+                    ))}
                   </span>
                 )}
                 {creator && (
@@ -178,7 +193,7 @@ type Draft = {
   notes: string;
   targetDate: string;
   recurrence: "once" | "daily";
-  assigneeId: string;
+  assigneeIds: string[];
 };
 
 function TaskModal({
@@ -256,7 +271,6 @@ export function TaskChecklist({
   ownOnly = false,
   showFilter = false,
   scope = "personal",
-  assigneeId,
   onLockChange,
   dateControl,
 }: {
@@ -265,7 +279,6 @@ export function TaskChecklist({
   ownOnly?: boolean;
   showFilter?: boolean;
   scope?: "personal" | "group";
-  assigneeId?: string;
   onLockChange?: (locked: boolean) => void;
   dateControl?: (locked: boolean) => React.ReactNode;
 }) {
@@ -286,8 +299,7 @@ export function TaskChecklist({
     ? tasksForDate(data.tasks, selectedDate).filter(
         (task) =>
           (task.scope ?? "personal") === scope &&
-          (!ownOnly || task.creator_id === memberId) &&
-          (!assigneeId || task.assignee_id === assigneeId),
+          (!ownOnly || task.creator_id === memberId),
       )
     : [];
   const filtered = tasks.filter(
@@ -316,10 +328,7 @@ export function TaskChecklist({
       targetDate:
         task === "new" ? selectedDate : task.target_date || selectedDate,
       recurrence: task === "new" ? "once" : (task.recurrence ?? "once"),
-      assigneeId:
-        task === "new"
-          ? (assigneeId ?? memberId)
-          : (task.assignee_id ?? memberId),
+      assigneeIds: task === "new" ? [memberId] : taskAssigneeIds(task),
     });
     setError("");
     setNotice("");
@@ -354,7 +363,7 @@ export function TaskChecklist({
                   recurrence: current.recurrence,
                   scope,
                   ...(scope === "group"
-                    ? { assigneeId: current.assigneeId }
+                    ? { assigneeIds: current.assigneeIds }
                     : {}),
                 }
               : {
@@ -384,7 +393,7 @@ export function TaskChecklist({
       lock ||
       !matchingDate ||
       (task.scope === "group"
-        ? task.assignee_id !== memberId
+        ? !taskAssigneeIds(task).includes(memberId)
         : task.creator_id !== memberId)
     )
       return;
@@ -467,10 +476,7 @@ export function TaskChecklist({
             lock ||
             !matchingDate ||
             (scope === "group" &&
-              !!assigneeId &&
-              !data?.members.some(
-                (member) => member.id === assigneeId && !member.removed_at,
-              ))
+              !data?.members.some((member) => !member.removed_at))
           }
           onClick={() => open("new")}
         >
@@ -599,33 +605,52 @@ export function TaskChecklist({
               />
             </label>
             {scope === "group" && (
-              <label className="field">
-                任务负责人
-                <select
-                  aria-label="任务负责人"
-                  required
-                  disabled={!!busy || draft.task !== "new"}
-                  value={draft.assigneeId}
-                  onChange={(event) =>
-                    setDraft({ ...draft, assigneeId: event.target.value })
-                  }
-                >
-                  <option value="">请选择一位成员</option>
+              <fieldset className={`field ${styles.assigneeField}`}>
+                <legend>任务负责人</legend>
+                <div className={styles.assigneeOptions}>
                   {data?.members
                     .filter(
                       (member) =>
                         !member.removed_at ||
                         (draft.task !== "new" &&
-                          member.id === draft.assigneeId),
+                          taskAssigneeIds(draft.task).includes(member.id)),
                     )
-                    .map((member) => (
-                      <option value={member.id} key={member.id}>
-                        {member.nickname}
-                        {member.removed_at ? "（已离开）" : ""}
-                      </option>
-                    ))}
-                </select>
-              </label>
+                    .map((member) => {
+                      const selected = draft.assigneeIds.includes(member.id);
+                      return (
+                        <label
+                          className={styles.assigneeOption}
+                          key={member.id}
+                        >
+                          <input
+                            type="checkbox"
+                            aria-label={`负责人：${member.nickname}`}
+                            disabled={!!busy || draft.task !== "new"}
+                            checked={selected}
+                            onChange={() =>
+                              setDraft({
+                                ...draft,
+                                assigneeIds: selected
+                                  ? draft.assigneeIds.filter(
+                                      (id) => id !== member.id,
+                                    )
+                                  : [...draft.assigneeIds, member.id],
+                              })
+                            }
+                          />
+                          <Avatar member={member} size="sm" />
+                          <span>
+                            {member.nickname}
+                            {member.removed_at ? "（已离开）" : ""}
+                          </span>
+                        </label>
+                      );
+                    })}
+                </div>
+                <span className={styles.assigneeHint}>
+                  可选择多位成员共同负责
+                </span>
+              </fieldset>
             )}
             <label className="field">
               补充说明 <span className="optional">选填</span>
@@ -704,7 +729,7 @@ export function TaskChecklist({
                 disabled={
                   !!busy ||
                   !draft.title.trim() ||
-                  (scope === "group" && !draft.assigneeId)
+                  (scope === "group" && draft.assigneeIds.length === 0)
                 }
               >
                 {busy === "save" ? "正在保存…" : "保存小目标"}

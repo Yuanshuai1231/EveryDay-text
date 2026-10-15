@@ -1,28 +1,6 @@
 .checklist {
   min-width: 0;
 }
-.memberFilter {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: var(--ink-soft);
-  font-size: 12px;
-}
-.memberFilter select {
-  max-width: 200px;
-  min-height: 40px;
-  padding: 8px 12px;
-  border: 1px solid #e8dff0;
-  border-radius: 10px;
-  background: #fff;
-  color: var(--plum);
-  font: inherit;
-  cursor: pointer;
-}
-.memberFilter select:focus-visible {
-  outline: 3px solid #dcd0ed;
-  outline-offset: 2px;
-}
 .toolbar {
   display: flex;
   align-items: center;
@@ -139,6 +117,12 @@ button.check:focus-visible {
   width: 18px;
   height: 18px;
   font-size: 8px;
+}
+.assigneeList {
+  gap: 6px !important;
+}
+.assignee {
+  gap: 3px !important;
 }
 .repeat {
   color: #9381aa;
@@ -271,6 +255,52 @@ button.check:focus-visible {
 }
 .repeatOptions:disabled {
   opacity: 0.68;
+}
+.assigneeField {
+  border: 0;
+  padding: 0;
+  margin: 18px 0;
+}
+.assigneeField legend {
+  margin-bottom: 9px;
+  color: var(--plum);
+  font-size: 12px;
+  font-weight: 700;
+}
+.assigneeOptions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.assigneeOption {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 40px;
+  border: 1px solid #e8dff0;
+  border-radius: 10px;
+  padding: 7px 11px;
+  color: var(--ink-soft);
+  font-size: 12px;
+  cursor: pointer;
+}
+.assigneeOption:has(input:checked) {
+  border-color: var(--lavender);
+  background: var(--lavender-soft);
+  color: var(--plum);
+}
+.assigneeOption:has(input:disabled) {
+  cursor: default;
+  opacity: 0.7;
+}
+.assigneeOption input {
+  accent-color: var(--lavender);
+}
+.assigneeHint {
+  display: block;
+  margin-top: 7px;
+  color: var(--ink-soft);
+  font-size: 11px;
 }
 .seriesNote,
 .deleteNote {

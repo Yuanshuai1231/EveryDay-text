@@ -192,6 +192,7 @@ export type Database = {
           creator_id: string;
           scope: "personal" | "group";
           assignee_id: string | null;
+          assignee_ids: string[] | null;
           title: string;
           notes: string;
           target_date: string | null;
@@ -269,7 +270,7 @@ export type Database = {
     };
     Views: Record<string, never>;
     Functions: {
-      create_owned_task: { Args: { p_space_id: string; p_member_id: string; p_title: string; p_notes: string; p_target_date: string; p_recurrence?: string; p_scope?: "personal" | "group"; p_assignee_id?: string | null }; Returns: Json; };
+      create_owned_task: { Args: { p_space_id: string; p_member_id: string; p_title: string; p_notes: string; p_target_date: string; p_recurrence?: string; p_scope?: "personal" | "group"; p_assignee_ids?: string[] | null; p_assignee_id?: string | null }; Returns: Json; };
       update_owned_task: { Args: { p_space_id: string; p_member_id: string; p_task_id: string; p_updated_at: string; p_changes: Json }; Returns: Json; };
       delete_owned_task: { Args: { p_space_id: string; p_member_id: string; p_task_id: string; p_updated_at: string; p_date?: string }; Returns: boolean; };
       delete_space: {

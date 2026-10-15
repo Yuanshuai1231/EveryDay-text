@@ -14,10 +14,15 @@ const recurrenceSchema = z.enum(["once", "daily"]);
 const titleSchema = z.string().trim().refine((text) => Array.from(text).length >= 1 && Array.from(text).length <= 120 && !text.includes("\u0000"));
 const notesSchema = z.string().refine((text) => Array.from(text).length <= 5000 && !text.includes("\u0000"));
 
+const assigneeIdsSchema = z.array(z.string().uuid()).min(1).max(100);
 export const createTaskSchema = z.object({
   title: titleSchema, notes: notesSchema.default(""), targetDate: dateSchema,
-  recurrence: recurrenceSchema.default("once"), scope: taskScopeSchema.default("personal"), assigneeId: z.string().uuid().optional(),
-}).strict().refine(value => value.scope === "group" ? value.assigneeId !== undefined : value.assigneeId === undefined);
+  recurrence: recurrenceSchema.default("once"), scope: taskScopeSchema.default("personal"),
+  assigneeIds: assigneeIdsSchema.optional(), assigneeId: z.string().uuid().optional(),
+}).strict().refine(value => value.scope === "group"
+  ? (value.assigneeIds?.length ?? (value.assigneeId ? 1 : 0)) > 0
+  : value.assigneeIds === undefined && value.assigneeId === undefined,
+  { message: "小组任务至少需要一位负责人" });
 export const updateTaskSchema = z.object({
   updatedAt: timestampSchema.optional(), expectedUpdatedAt: timestampSchema.optional(),
   title: titleSchema.optional(), notes: notesSchema.optional(), targetDate: dateSchema.optional(), recurrence: recurrenceSchema.optional(), completed: z.boolean().optional(), date: dateSchema.optional(),
@@ -34,7 +39,9 @@ export async function listTasks(db: DataClient, spaceId: string, date: string, s
   if (assigneeId !== undefined) query = query.eq("assignee_id", assigneeId);
   const { data, error } = await query.order("created_at", { ascending: true }).order("id", { ascending: true });
   if (error) throw error;
-  const tasks = (data ?? []).filter(task => task.recurrence === "daily" ? task.ends_on === null || date <= task.ends_on : task.completed_on === null || date <= task.completed_on);
+  const tasks = (data ?? [])
+    .filter(task => task.recurrence === "daily" ? task.ends_on === null || date <= task.ends_on : task.completed_on === null || date <= task.completed_on)
+    .filter(task => assigneeId === undefined || (task.assignee_ids ?? (task.assignee_id ? [task.assignee_id] : [])).includes(assigneeId));
   const dailyIds = tasks.filter(task => task.recurrence === "daily").map(task => task.id);
   let completions: CompletionRow[] = [];
   if (dailyIds.length) {
@@ -71,7 +78,8 @@ function throwMutationError(error: { code?: string; message?: string }): never {
 }
 
 export async function createTask(db: DataClient, spaceId: string, memberId: string, input: Omit<z.infer<typeof createTaskSchema>, "recurrence" | "scope"> & { recurrence?: "once" | "daily"; scope?: TaskScope }): Promise<TaskRecord> {
-  const { data, error } = await db.rpc("create_owned_task", { p_space_id: spaceId, p_member_id: memberId, p_title: input.title, p_notes: input.notes, p_target_date: input.targetDate, p_recurrence: input.recurrence ?? "once", p_scope: input.scope ?? "personal", p_assignee_id: input.assigneeId ?? null });
+  const assigneeIds = input.assigneeIds ?? (input.assigneeId ? [input.assigneeId] : undefined);
+  const { data, error } = await db.rpc("create_owned_task", { p_space_id: spaceId, p_member_id: memberId, p_title: input.title, p_notes: input.notes, p_target_date: input.targetDate, p_recurrence: input.recurrence ?? "once", p_scope: input.scope ?? "personal", p_assignee_ids: assigneeIds ?? null });
   if (error) throwMutationError(error);
   if (!data) throw new Error("Task insert returned no row");
   return data as TaskRecord;

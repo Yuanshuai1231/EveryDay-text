@@ -120,7 +120,7 @@ describe("task checklist interactions", () => {
       targetDate: date,
       recurrence: "daily",
       scope: "group",
-      assigneeId: "me",
+      assigneeIds: ["me"],
     });
   });
   it("allows the assignee to complete and the creator to edit or delete a row", () => {

@@ -16,7 +16,7 @@ vi.mock("@/lib/auth/session", () => ({ getCurrentSession: async () => auth.curre
 vi.mock("@/lib/supabase/server", () => ({ createSupabaseAdminClient: () => auth.db }));
 const day = "2026-10-13";
 const migrationName = "20261013000800_personal_group_tasks.sql";
-type Task = { id: string; updated_at: string; creator_id: string; scope: string; assignee_id: string | null };
+type Task = { id: string; updated_at: string; creator_id: string; scope: string; assignee_id: string | null; assignee_ids?: string[] | null };
 let db: PGlite, space: string, alice: string, bob: string, charlie: string, outsider: string;
 let legacyIds: string[], legacyBefore: unknown[];
 function actor(memberId: string) { auth.current = { member_id: memberId, space_id: space, expires_at: "2099-01-01T00:00:00Z", revoked_at: null, member_removed_at: null }; }
@@ -76,6 +76,23 @@ describe("personal checklists and fixed group assignments", () => {
     actor(charlie);
     expect(await group()).toMatchObject({ scope: "group", creator_id: charlie, assignee_id: bob });
     expect(await group({ assigneeId: charlie })).toMatchObject({ creator_id: charlie, assignee_id: charlie });
+  });
+  it("stores multiple active assignees and lets each one complete the goal", async () => {
+    const task = await create({ scope: "group", assigneeIds: [bob, charlie] });
+    expect(task).toMatchObject({
+      scope: "group",
+    });
+    expect(task.assignee_ids).toEqual([bob, charlie].sort());
+    expect(task.assignee_id).toBe(task.assignee_ids?.[0]);
+    actor(bob);
+    const completed = await patch(task, { completed: true, date: day });
+    expect(completed.status).toBe(200);
+    actor(charlie);
+    const reopened = await patch((await completed.json()).task, {
+      completed: false,
+      date: day,
+    });
+    expect(reopened.status).toBe(200);
   });
   it("filters by scope and assignee while keeping unfiltered API compatibility", async () => {
     const personal = await create(), assignedBob = await group(), assignedAlice = await group({ assigneeId: alice });

@@ -97,32 +97,30 @@ afterEach(() => {
 });
 
 describe("group goals stay separate from personal daily tasks", () => {
-  it("shows only group goals and filters them by the responsible member", () => {
+  it("shows only group goals without a separate member filter", () => {
     render(<TaskBoard />);
     expect(screen.queryByText("我的个人阅读")).toBeNull();
     expect(screen.queryByText("小林的个人记录")).toBeNull();
     expect(screen.getByText("给小林的组内目标")).toBeTruthy();
     expect(screen.getByText("分配给我的组内目标")).toBeTruthy();
-    fireEvent.change(screen.getByRole("combobox", { name: "查看成员" }), {
-      target: { value: "peer" },
-    });
-    expect(screen.getByText("给小林的组内目标")).toBeTruthy();
-    expect(screen.queryByText("分配给我的组内目标")).toBeNull();
+    expect(screen.queryByRole("combobox", { name: "查看成员" })).toBeNull();
   });
-  it("creates a group goal for the selected active member", async () => {
+  it("creates a group goal for multiple active members", async () => {
     render(<TaskBoard />);
-    fireEvent.change(screen.getByRole("combobox", { name: "查看成员" }), {
-      target: { value: "peer" },
-    });
     fireEvent.click(screen.getByRole("button", { name: "添加任务" }));
     const dialog = screen.getByRole("dialog");
-    const assignee = within(dialog).getByRole("combobox", {
-      name: "任务负责人",
-    });
-    expect(assignee).toHaveProperty("value", "peer");
     expect(
-      within(assignee).queryByRole("option", { name: "离开的成员" }),
+      within(dialog).getByRole("group", { name: "任务负责人" }),
+    ).toBeTruthy();
+    expect(
+      within(dialog).getByRole("checkbox", { name: "负责人：小林" }),
+    ).toBeTruthy();
+    expect(
+      within(dialog).queryByRole("checkbox", { name: "负责人：离开的成员" }),
     ).toBeNull();
+    fireEvent.click(
+      within(dialog).getByRole("checkbox", { name: "负责人：小林" }),
+    );
     fireEvent.change(
       within(dialog).getByRole("textbox", { name: "任务名称" }),
       { target: { value: "完成小组报告" } },
@@ -133,7 +131,7 @@ describe("group goals stay separate from personal daily tasks", () => {
       JSON.parse(vi.mocked(fetch).mock.calls[0][1]?.body as string),
     ).toMatchObject({
       scope: "group",
-      assigneeId: "peer",
+      assigneeIds: ["me", "peer"],
       title: "完成小组报告",
       targetDate: date,
     });

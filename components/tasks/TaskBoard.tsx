@@ -1,29 +1,16 @@
 "use client";
 
-import { useState } from "react";
 import { CheckCheck, ListTodo, Target } from "lucide-react";
 import { useSpace } from "@/components/space/SpaceProvider";
 import { DatePicker } from "@/components/ui/DatePicker";
-import { TaskChecklist, tasksForDate } from "./TaskChecklist";
-import styles from "./tasks.module.css";
+import { TaskChecklist } from "./TaskChecklist";
 
 export function TaskBoard() {
   const { data, date, setDate } = useSpace();
-  const [memberFilter, setMemberFilter] = useState("all");
   const matchingDate = data?.date === date;
-  const allTasks = matchingDate
-    ? tasksForDate(data.tasks, date).filter((task) => task.scope === "group")
+  const tasks = matchingDate
+    ? data.tasks.filter((task) => task.scope === "group")
     : [];
-  const tasks = allTasks.filter(
-    (task) => memberFilter === "all" || task.assignee_id === memberFilter,
-  );
-  const members =
-    data?.members.filter(
-      (member) =>
-        !member.removed_at ||
-        allTasks.some((task) => task.assignee_id === member.id),
-    ) ?? [];
-  const selectedMember = members.find((member) => member.id === memberFilter);
   const completed = tasks.filter((task) => task.completed).length;
   return (
     <div className="tasks-page">
@@ -42,12 +29,7 @@ export function TaskBoard() {
       {matchingDate && (
         <section className="task-banner">
           <div>
-            <span className="mini-pill">
-              {date} ·{" "}
-              {selectedMember
-                ? `${selectedMember.nickname}的小组目标`
-                : "我们的小组目标"}
-            </span>
+            <span className="mini-pill">{date} · 我们的小组目标</span>
             <h2>今天，也离目标近一点。</h2>
             <p>
               已完成 <strong>{completed}</strong> 个任务 · 还有{" "}
@@ -67,39 +49,15 @@ export function TaskBoard() {
           selectedDate={date}
           memberId={data?.member.id ?? ""}
           scope="group"
-          assigneeId={memberFilter === "all" ? undefined : memberFilter}
           showFilter
           dateControl={(locked) => (
-            <>
-              <label className={styles.memberFilter}>
-                查看成员
-                <select
-                  aria-label="查看成员"
-                  value={memberFilter}
-                  disabled={locked}
-                  onChange={(event) => setMemberFilter(event.target.value)}
-                >
-                  <option value="all">全部成员</option>
-                  {members.map((member) => (
-                    <option key={member.id} value={member.id}>
-                      {member.nickname}
-                      {member.removed_at
-                        ? "（已离开）"
-                        : member.id === data?.member.id
-                          ? "（我）"
-                          : ""}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <DatePicker
-                value={date}
-                onChange={setDate}
-                label="任务日期"
-                timeZone={data?.space.timezone}
-                disabled={locked}
-              />
-            </>
+            <DatePicker
+              value={date}
+              onChange={setDate}
+              label="任务日期"
+              timeZone={data?.space.timezone}
+              disabled={locked}
+            />
           )}
         />
         <div className="task-board-footer">
