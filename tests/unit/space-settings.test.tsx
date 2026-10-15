@@ -114,6 +114,7 @@ describe("space settings", () => {
     await user.clear(screen.getByLabelText("空间名称"));
     await user.type(screen.getByLabelText("空间名称"), "新晨光组");
     await user.click(screen.getByRole("radio", { name: "咖啡杯" }));
+    await user.click(screen.getByRole("radio", { name: "薄荷蓝" }));
     await user.click(screen.getByRole("button", { name: "保存设置" }));
     await waitFor(() =>
       expect(screen.getByRole("alert").textContent).toContain("保存失败"),
@@ -162,12 +163,13 @@ describe("space settings", () => {
     await user.clear(screen.getByLabelText("空间名称"));
     await user.type(screen.getByLabelText("空间名称"), "新晨光组");
     await user.click(screen.getByRole("radio", { name: "咖啡杯" }));
+    await user.click(screen.getByRole("radio", { name: "薄荷蓝" }));
     await user.click(screen.getByRole("button", { name: "保存设置" }));
     expect(fetchMock).toHaveBeenCalledWith(
       "/api/spaces/s1",
       expect.objectContaining({
         method: "PATCH",
-        body: JSON.stringify({ name: "新晨光组", avatarId: "coffee" }),
+        body: JSON.stringify({ name: "新晨光组", avatarId: "coffee", themeId: "mint-blue" }),
       }),
     );
     await waitFor(() => expect(reload).toHaveBeenCalledOnce());

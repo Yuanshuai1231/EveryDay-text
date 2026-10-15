@@ -10,6 +10,11 @@ import {
   resolveSpaceAvatar,
   type SpaceAvatarId,
 } from "@/lib/spaces/catalog";
+import {
+  SPACE_THEME_OPTIONS,
+  resolveSpaceTheme,
+  type SpaceThemeId,
+} from "@/lib/spaces/themes";
 import { SpaceObjectPortrait } from "@/components/ui/SpaceAvatar";
 import styles from "./SpaceSettings.module.css";
 import SpaceMembershipActions from "./SpaceMembershipActions";
@@ -19,18 +24,21 @@ export default function SpaceSettings() {
   const { spaceId, data, reload } = useSpace();
   const space = data?.space;
   const currentAvatar = resolveSpaceAvatar(space?.avatar_id, spaceId).id;
+  const currentTheme = resolveSpaceTheme(space?.theme_id).id;
   const canEdit = data?.member.role === "creator";
   const [name, setName] = useState(space?.name ?? "");
   const [avatarId, setAvatarId] = useState<SpaceAvatarId>(currentAvatar);
+  const [themeId, setThemeId] = useState<SpaceThemeId>(currentTheme);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [saved, setSaved] = useState(false);
   useEffect(() => {
     setName(space?.name ?? "");
     setAvatarId(currentAvatar);
-  }, [space?.name, currentAvatar]);
+    setThemeId(currentTheme);
+  }, [space?.name, currentAvatar, currentTheme]);
   const dirty =
-    !!space && (name.trim() !== space.name || avatarId !== currentAvatar);
+    !!space && (name.trim() !== space.name || avatarId !== currentAvatar || themeId !== currentTheme);
   async function submit(event: FormEvent) {
     event.preventDefault();
     if (!canEdit || !dirty || busy) return;
@@ -41,7 +49,7 @@ export default function SpaceSettings() {
       const response = await fetch(`/api/spaces/${spaceId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: name.trim(), avatarId }),
+        body: JSON.stringify({ name: name.trim(), avatarId, themeId }),
       });
       const body = await response.json().catch(() => ({}));
       if (!response.ok)
@@ -57,6 +65,7 @@ export default function SpaceSettings() {
   function cancel() {
     setName(space?.name ?? "");
     setAvatarId(currentAvatar);
+    setThemeId(currentTheme);
     setError("");
     setSaved(false);
   }
@@ -117,6 +126,33 @@ export default function SpaceSettings() {
                 />
                 <span style={{ background: option.background }}>
                   <SpaceObjectPortrait object={option.id} />
+                </span>
+                <small>{option.label}</small>
+              </label>
+            ))}
+          </fieldset>
+        </section>
+        <section className={styles.section}>
+          <div>
+            <h2>首页主题</h2>
+            <p>选择小组首页的背景氛围，成员头像会展示在主视觉中。</p>
+          </div>
+          <fieldset className={styles.themeGrid} disabled={!canEdit}>
+            <legend className={styles.visuallyHidden}>首页主题</legend>
+            {SPACE_THEME_OPTIONS.map((option) => (
+              <label className={styles.themeOption} key={option.id}>
+                <input
+                  type="radio"
+                  name="space-theme"
+                  aria-label={option.label}
+                  checked={themeId === option.id}
+                  onChange={() => setThemeId(option.id)}
+                />
+                <span
+                  className={styles.themeSwatch}
+                  style={{ background: `linear-gradient(135deg, ${option.from}, ${option.to})` }}
+                >
+                  <b style={{ background: option.accent }} />
                 </span>
                 <small>{option.label}</small>
               </label>

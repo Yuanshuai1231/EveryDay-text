@@ -200,7 +200,7 @@ describe("verified account spaces", () => {
     expect(
       (
         await db.query(
-          "select name,avatar_id,timezone from spaces where id=$1",
+          "select name,avatar_id,timezone,theme_id from spaces where id=$1",
           [payload.spaceId],
         )
       ).rows[0],
@@ -208,6 +208,7 @@ describe("verified account spaces", () => {
       name: "我的小组",
       avatar_id: "rocket",
       timezone: "Asia/Hong_Kong",
+      theme_id: "growth-purple",
     });
   });
 
@@ -515,7 +516,7 @@ describe("verified account spaces", () => {
     }
   }, 10000);
 
-  it("lets only the creator update a valid group name and avatar", async () => {
+  it("lets only the creator update a valid group name, avatar, and shared theme", async () => {
     const { POST: create } = await import("@/app/api/spaces/route");
     const created = await (
       await create(request("/api/spaces", { name: "只允许创建者" }))
@@ -527,7 +528,7 @@ describe("verified account spaces", () => {
         await PATCH(
           request(
             `/api/spaces/${created.spaceId}`,
-            { name: "更新成功", avatarId: "headphones" },
+            { name: "更新成功", avatarId: "headphones", themeId: "mint-blue" },
             "PATCH",
           ),
           context,
@@ -536,11 +537,16 @@ describe("verified account spaces", () => {
     ).toBe(200);
     expect(
       (
-        await db.query("select name,avatar_id from spaces where id=$1", [
+        await db.query("select name,avatar_id,theme_id from spaces where id=$1", [
           created.spaceId,
         ])
       ).rows[0],
-    ).toEqual({ name: "更新成功", avatar_id: "headphones" });
+    ).toEqual({ name: "更新成功", avatar_id: "headphones", theme_id: "mint-blue" });
+    const invalidTheme = await PATCH(
+      request(`/api/spaces/${created.spaceId}`, { name: "主题无效", themeId: "neon" }, "PATCH"),
+      context,
+    );
+    expect(invalidTheme.status).toBe(400);
     expect(
       (
         await PATCH(
@@ -555,11 +561,11 @@ describe("verified account spaces", () => {
     ).toBe(200);
     expect(
       (
-        await db.query("select name,avatar_id from spaces where id=$1", [
+        await db.query("select name,avatar_id,theme_id from spaces where id=$1", [
           created.spaceId,
         ])
       ).rows[0],
-    ).toEqual({ name: "只修改名称", avatar_id: "headphones" });
+    ).toEqual({ name: "只修改名称", avatar_id: "headphones", theme_id: "mint-blue" });
     auth.token = otherToken;
     const forbidden = await PATCH(
       request(`/api/spaces/${created.spaceId}`, { name: "越权" }, "PATCH"),

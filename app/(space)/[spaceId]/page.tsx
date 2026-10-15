@@ -4,8 +4,9 @@ import Link from "next/link";
 import { ArrowRight, CalendarDays, Check, CheckCheck, ChevronRight, Flame, MessageCircle, Plus, Repeat2, Sparkles, Sun, Target, Users } from "lucide-react";
 import { useSpace } from "@/components/space/SpaceProvider";
 import { Avatar } from "@/components/ui/Avatar";
-import { Mascot } from "@/components/ui/Mascot";
 import { DatePicker } from "@/components/ui/DatePicker";
+import { GroupHeroArtwork } from "@/components/space/GroupHeroArtwork";
+import { resolveSpaceTheme } from "@/lib/spaces/themes";
 import styles from "@/components/checkin/overview-checklist.module.css";
 
 export default function SpaceOverview() {
@@ -19,9 +20,10 @@ export default function SpaceOverview() {
   const checkinUrl = `/${spaceId}/checkin?date=${date}`;
   const percent = data.stats.totalMembers ? Math.round(data.stats.checkedIn / data.stats.totalMembers * 100) : 0;
   const dateLabel = new Date(`${date}T12:00:00`).toLocaleDateString("zh-CN", { month: "long", day: "numeric", weekday: "long" });
+  const theme = resolveSpaceTheme(data.space.theme_id);
   return <div className="overview-page">
     <div className="page-heading"><div><p className="eyebrow"><Sun size={14} /> 又是值得记录的一天</p><h1>你好，{data.member.nickname}<span className="hello-spark">✳</span></h1><p>和小伙伴一起，把平凡的一天过得闪闪发光。</p></div><DatePicker label="查看概览日期" value={date} onChange={setDate} timeZone={data.space.timezone} /></div>
-    <section className="welcome-banner"><div className="welcome-copy"><span className="mini-pill"><Sparkles size={13} /> 每一份坚持，都算数</span><h2>一个人走得快，<br />一群人走得更可爱。</h2><p>写下今天的小进步，收获伙伴的大鼓励。</p><Link href={checkinUrl} className="button button-primary">{myCheckin ? "查看我的今日记录" : "开启今天的打卡"}<ArrowRight size={17} /></Link></div><div className="welcome-art"><span className="art-caption caption-one">一起长大吧！</span><Mascot /><span className="art-caption caption-two"><Check size={13} /> 今天也有进步</span></div><span className="banner-ring ring-one" /><span className="banner-ring ring-two" /></section>
+    <section className={`welcome-banner ${theme.className}`}><div className="welcome-copy"><span className="mini-pill"><Sparkles size={13} /> 每一份坚持，都算数</span><h2>一个人走得快，<br />一群人走得更可爱。</h2><p>写下今天的小进步，收获伙伴的大鼓励。</p><Link href={checkinUrl} className="button button-primary">{myCheckin ? "查看我的今日记录" : "开启今天的打卡"}<ArrowRight size={17} /></Link></div><div className="welcome-art"><span className="art-caption caption-one">一起长大吧！</span><GroupHeroArtwork members={data.members} /><span className="art-caption caption-two"><Check size={13} /> 今天也有进步</span></div><span className="banner-ring ring-one" /><span className="banner-ring ring-two" /></section>
     <section className="stats-grid" aria-label="小组统计"><div className="stat-card stat-coral"><span className="stat-icon"><CalendarDays size={22} /></span><div><p>小组打卡</p><strong>{data.stats.checkedIn}<small> / {data.stats.totalMembers} 人</small></strong><span>{percent === 100 ? "全员集合，好棒！" : "每一次出现，都是坚持"}</span></div><div className="tiny-bars" aria-hidden="true"><i /><i /><i /><i /><i /></div></div><div className="stat-card stat-blue"><span className="stat-icon"><CheckCheck size={23} /></span><div><p>任务完成</p><strong>{data.stats.completedTasks}<small> / {data.stats.totalTasks} 项</small></strong><span>把小目标，变成小成就</span></div><Target className="stat-watermark" size={58} /></div><div className="stat-card stat-green"><span className="stat-icon"><Flame size={23} /></span><div><p>我的连续打卡</p><strong>{data.stats.streak}<small> 天</small></strong><span>{data.stats.streak ? "继续积攒你的成长能量" : "今天就是最好的开始"}</span></div><SproutDrawing /></div></section>
     <div className="dashboard-columns"><div className="dashboard-main">
       <section className="panel" aria-label="我的今日清单">

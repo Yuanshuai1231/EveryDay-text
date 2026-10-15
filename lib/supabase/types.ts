@@ -14,6 +14,7 @@ export type Database = {
           id: string;
           name: string;
           avatar_id: string | null;
+          theme_id: string;
           timezone: string;
           creator_member_id: string | null;
           invite_code_hash: string | null;
@@ -462,6 +463,7 @@ export type Database = {
           p_account_id: string;
           p_name: string;
           p_avatar_id: string | null;
+          p_theme_id?: string | null;
         };
         Returns: Database["public"]["Tables"]["spaces"]["Row"][];
       };

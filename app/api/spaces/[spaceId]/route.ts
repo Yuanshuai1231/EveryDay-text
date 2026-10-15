@@ -16,6 +16,7 @@ import {
 } from "@/lib/data/api";
 import { clearSessionCookie } from "@/lib/auth/session";
 import { isGroupAvatarId } from "@/lib/spaces/catalog";
+import { isSpaceThemeId } from "@/lib/spaces/themes";
 
 export async function DELETE(
   request: NextRequest,
@@ -84,15 +85,17 @@ export async function PATCH(
   if (
     !parsed.success ||
     (parsed.data.avatarId !== undefined &&
-      !isGroupAvatarId(parsed.data.avatarId))
+      !isGroupAvatarId(parsed.data.avatarId)) ||
+    (parsed.data.themeId !== undefined && !isSpaceThemeId(parsed.data.themeId))
   )
-    return errorResponse(ERROR_CODES.INVALID_INPUT, "空间名称或头像无效", 400);
+    return errorResponse(ERROR_CODES.INVALID_INPUT, "空间名称、头像或主题无效", 400);
   try {
     const { data, error } = await db.rpc("update_account_space", {
       p_space_id: spaceId,
       p_account_id: account.user.id,
       p_name: parsed.data.name,
       p_avatar_id: parsed.data.avatarId ?? null,
+      p_theme_id: parsed.data.themeId ?? null,
     });
     const space = Array.isArray(data) ? data[0] : data;
     if (error || !space) {
@@ -118,6 +121,7 @@ export async function PATCH(
         name: space.name,
         avatar_id: space.avatar_id,
         timezone: space.timezone,
+        theme_id: space.theme_id,
       },
     });
   } catch {

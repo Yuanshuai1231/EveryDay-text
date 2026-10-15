@@ -4,7 +4,7 @@ import { listTasks } from "./tasks";
 
 export async function spaceSummary(spaceId:string,memberId:string,date?:string){
  const db=createSupabaseAdminClient();
- const spaceResult=await db.from("spaces").select("id,name,avatar_id,timezone,creator_member_id").eq("id",spaceId).single();
+ const spaceResult=await db.from("spaces").select("id,name,avatar_id,theme_id,timezone,creator_member_id").eq("id",spaceId).single();
  if(spaceResult.error)throw spaceResult.error;
  const space=spaceResult.data;
  const day=date??localDateInTimeZone(new Date(),space.timezone);
