@@ -214,9 +214,25 @@ export type Database = {
         Relationships: [];
       };
       task_completions: {
-        Row: { id: string; space_id: string; task_id: string; work_date: string; completed: boolean; completed_at: string | null; updated_at: string; };
-        Insert: Partial<Database["public"]["Tables"]["task_completions"]["Row"]> & Pick<Database["public"]["Tables"]["task_completions"]["Row"], "space_id" | "task_id" | "work_date">;
-        Update: Partial<Database["public"]["Tables"]["task_completions"]["Row"]>;
+        Row: {
+          id: string;
+          space_id: string;
+          task_id: string;
+          work_date: string;
+          completed: boolean;
+          completed_at: string | null;
+          updated_at: string;
+        };
+        Insert: Partial<
+          Database["public"]["Tables"]["task_completions"]["Row"]
+        > &
+          Pick<
+            Database["public"]["Tables"]["task_completions"]["Row"],
+            "space_id" | "task_id" | "work_date"
+          >;
+        Update: Partial<
+          Database["public"]["Tables"]["task_completions"]["Row"]
+        >;
         Relationships: [];
       };
       conversations: {
@@ -250,6 +266,24 @@ export type Database = {
         >;
         Relationships: [];
       };
+      conversation_reads: {
+        Row: {
+          conversation_id: string;
+          member_id: string;
+          last_read_at: string;
+        };
+        Insert: Partial<
+          Database["public"]["Tables"]["conversation_reads"]["Row"]
+        > &
+          Pick<
+            Database["public"]["Tables"]["conversation_reads"]["Row"],
+            "conversation_id" | "member_id"
+          >;
+        Update: Partial<
+          Database["public"]["Tables"]["conversation_reads"]["Row"]
+        >;
+        Relationships: [];
+      };
       messages: {
         Row: {
           id: string;
@@ -270,9 +304,40 @@ export type Database = {
     };
     Views: Record<string, never>;
     Functions: {
-      create_owned_task: { Args: { p_space_id: string; p_member_id: string; p_title: string; p_notes: string; p_target_date: string; p_recurrence?: string; p_scope?: "personal" | "group"; p_assignee_ids?: string[] | null; p_assignee_id?: string | null }; Returns: Json; };
-      update_owned_task: { Args: { p_space_id: string; p_member_id: string; p_task_id: string; p_updated_at: string; p_changes: Json }; Returns: Json; };
-      delete_owned_task: { Args: { p_space_id: string; p_member_id: string; p_task_id: string; p_updated_at: string; p_date?: string }; Returns: boolean; };
+      create_owned_task: {
+        Args: {
+          p_space_id: string;
+          p_member_id: string;
+          p_title: string;
+          p_notes: string;
+          p_target_date: string;
+          p_recurrence?: string;
+          p_scope?: "personal" | "group";
+          p_assignee_ids?: string[] | null;
+          p_assignee_id?: string | null;
+        };
+        Returns: Json;
+      };
+      update_owned_task: {
+        Args: {
+          p_space_id: string;
+          p_member_id: string;
+          p_task_id: string;
+          p_updated_at: string;
+          p_changes: Json;
+        };
+        Returns: Json;
+      };
+      delete_owned_task: {
+        Args: {
+          p_space_id: string;
+          p_member_id: string;
+          p_task_id: string;
+          p_updated_at: string;
+          p_date?: string;
+        };
+        Returns: boolean;
+      };
       delete_space: {
         Args: { p_space_id: string; p_actor_id: string };
         Returns: boolean;

@@ -15,6 +15,7 @@ const tables = new Set([
   "task_completions",
   "conversations",
   "conversation_members",
+  "conversation_reads",
   "messages",
 ]);
 const identifier = (value: string) => {
